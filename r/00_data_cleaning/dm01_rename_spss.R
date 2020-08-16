@@ -5,15 +5,16 @@ library(data.table)
 ## Update to the latest data and then savem
 ##
 
+panel_path <- c("panel_a")[1]
 spss_country_path <- c("nl_be", "no", "uk")[3]
-path <- file.path("data", "raw_data", "spss_files", spss_country_path)
+path <- file.path("data", "raw_data", spss_country_path, panel_path)
 spss_files <- list.files(path)
 spss_files
 
 # Change index here
-spss_file <- spss_files[7]
+spss_file <- spss_files[1]
 
-spss_file <- here(path, spss_file)
+spss_file <- file.path(path, spss_file)
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
 
 df <- read.spss(spss_file)
