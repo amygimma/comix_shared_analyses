@@ -1,8 +1,6 @@
 ### Rename spss data
-
 library(foreign)
 library(data.table)
-library(here)
 
 ## Update to the latest data and then savem
 ##
