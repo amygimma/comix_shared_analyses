@@ -1,6 +1,16 @@
-#Custom for CoMix Repo
+# Custom for CoMix Repo
 raw_data/*
+data/*
 
+# Extra careful
+*.spss
+*.rds
+*.clean_participants.rds
+*.clean_participants.csv
+*.clean_contacts.rds
+*.clean_contacts.csv
+*.clean_households.rds
+*.clean_households.csv
 
 # History files
 .Rhistory
