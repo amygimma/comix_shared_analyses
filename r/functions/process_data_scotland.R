@@ -59,7 +59,6 @@ loop_questions
 table_list <- list()
 id_vars <- "respondent"
 for (q in unique(loop_questions$var_question)) {
-  # browser()
   varname <- snakecase::to_snake_case(q)
 
   cs <- grep(varname, names(match_rd_dt), value = T)
@@ -94,59 +93,23 @@ seq_questions <- rd[!is.na(seq_id) & loop_question == FALSE]
 # PROBLEM: seq_id == 4 are data for several contacts
 seq_questions <- seq_questions[seq_id != 4]
 
-# table_list <- list()
-# id_vars <- "respondent"
-# for (q in unique(seq_questions$var_original)) {
-#   # browser()
-#   varname <- snakecase::to_snake_case(q)
-#   # if (varname == "157_before_the_coronavirus_epidemic_started_how_often_did_you_usually_have_direct_contact_with_question_id_80984179_output_answer_type_text_encoding_utf_8_select_only_one") browser()
-#   cs <- grep(varname, names(match_rd_dt), value = T)
-#
-#   q_wide <- match_rd_dt[,c(id_vars, cs), with = F]
-#   q_long <- melt(q_wide, id.cols = id_vars,
-#                  measure.vars = cs,
-#                  value.name = varname)
-#   table_row <- rd[varname == snakecase::to_snake_case(var_original)]$seq_id
-#   q_long[, table_row := table_row]
-#   q_long[, variable := NULL]
-#   table_list[[paste0("table_", varname)]] <- q_long
-# }
-#
-# match_vars <- c(id_vars, "table_row")
-# # PROBLEM: Seems to work but I can't get them to merge together in groups of more than 6
-# seq_questions_dt <-
-#   Reduce(function(...) merge(..., by = match_vars), table_list[1:4])
-
-
-
-# potential solution: merge in groups of 5 (works i think), then merge the resulting dts (doesnt work)
-# seq_questions_dt_list <- list()
-# i <- 1
-# for (n in seq(1,length(table_list), 4)) {
-#   # print(n)
-#   l <- n+4
-#
-#   seq_questions_dt_list[[i]] <-
-#     Reduce(function(...) merge(..., by = match_vars), table_list[n:l])
-#   i <- i + 1
-# }
-#
-# seq_questions_dt <-  Reduce(function(...) merge(..., by = match_vars), seq_questions_dt_list[1:2])
-#
-#
-#
-# # eventually:
-#
-# data_dt <- merge(loop_questions_dt, seq_questions_dt, by = match_vars, all.x  = T)
-#
-
-
 
 merge_tables <- function(t1, t2, all) {
-  mergeby <- intersect(names(t1), names(t2))
-  merge(t1, t2, by = mergeby, all = all)
-  # merge(t1,t2, by = mergeby, all = all)
+  # mergeby <- intersect(names(t1), names(t2))
+  mergeby <- c("respondent", "table_row")
+  # merge(t1, t2, by = mergeby)
+  if (nrow(t1[table_row == t2$table_row]) == 0) {
+    t3 <- rbind(t1,t2, fill = T)
+  } else {
+    tr <- t2$table_row
+    t2a <- t2[, -mergeby, with = F]
+    nam <- names(t2a)
+    t1[table_row == tr, c(nam) := t2a[, get(nam)]]
+    t3 <- t1
+  }
+  t3
 }
+
 #Approach 2
 #
 table_list <- list()
@@ -155,7 +118,7 @@ q_ids <- data.table()
 base_qid <- NA
 i <- 0
 tables_dt <- NA
-for (q in unique(seq_questions$var_original)[1:100]) {
+for (q in unique(seq_questions$var_original)[1:1000]) {
 
   varname <- snakecase::to_snake_case(q)
   question_id <- as.numeric(gsub('.*\\[question id="|\\".*', "", q))
@@ -163,10 +126,8 @@ for (q in unique(seq_questions$var_original)[1:100]) {
   if (is.na(question_id) & is.na(base_qid)) {
     message(paste("Skipping:", q))
   } else if(is.na(question_id) & !is.na(base_qid)) {
-    # browser()
     qid_seq <- base_qid
   } else if (!is.na(question_id)) {
-    # browser()
     # check if the question_id has an associated qid_seq
     question_id_ <- question_id
     qid_seq <- q_ids[question_id == question_id_]$qid_seq
@@ -190,24 +151,17 @@ for (q in unique(seq_questions$var_original)[1:100]) {
     q_long <- melt(q_wide, id.cols = id_vars,
                    measure.vars = cs,
                    value.name = "value")
-    # browser()
     col_name <- sub("^.*[0-9]_{1}","" , as.character(q_long$variable[1]), perl = T)
     if(!is.na(question_id)) {
-      # browser()
       col_name <- gsub(as.character(question_id) ,"" ,col_name, perl = T)
     }
     setnames(q_long, "value", col_name)
-    # browser()
     q_long[, variable := NULL]
     q_long[, table_row := qid_seq]
-    q
     base_qid <- qid_seq
-    # browser()
-    # table_list[[paste0("table_", varname)]] <- q_long
     if(is.na(tables_dt)) {
       tables_dt <- q_long
     } else {
-      browser()
       lapply(tables_dt, class)
       lapply(q_long, class)
       tables_dt <- merge_tables(tables_dt, q_long, all = T)
@@ -216,39 +170,9 @@ for (q in unique(seq_questions$var_original)[1:100]) {
   }
 }
 
-c
-merge_tables <- function(t1, t2, all) {
-  # browser()
-  # mergeby <- intersect(names(t1), names(t2))
-  # browser()
-  mergeby <- c("respondent", "table_row")
-  # merge(t1, t2, by = mergeby)
-  if (nrow(t1[table_row == t2$table_row]) == 0) {
-    t3 <- rbind(t1,t2, fill = T)
-  } else {
-    # browser()
-    tr <- t2$table_row
-    if (tr == 2) browser()
-    t2a <- t2[, -mergeby, with = F]
-    nam <- names(t2a)
-    t1[table_row == tr, c(nam) := t2a[, get(nam)]]
-  }
-  # te
-  # merge(t1,t2, by = mergeby, all = all)
-}
-
-View(  tables_dt)
 
 
-#
-#
-# seq_questions_dt <-
-#   Reduce(function(...) merge_tables(...), table_list)
-# x <- 1
-# if (x == 0) {
-#   print(x)
-# } else if(x == 1) {
-#   print(x+1)
-# } else {
-#   print(x+2)
-# }
+View(tables_dt)
+
+# potential for later
+# data_dt <- merge(loop_questions_dt, seq_questions_dt, by = match_vars, all.x  = T)
