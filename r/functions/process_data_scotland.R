@@ -120,29 +120,33 @@ seq_questions <- seq_questions[seq_id != 4]
 
 
 # potential solution: merge in groups of 5 (works i think), then merge the resulting dts (doesnt work)
-seq_questions_dt_list <- list()
-i <- 1
-for (n in seq(1,length(table_list), 4)) {
-  # print(n)
-  l <- n+4
+# seq_questions_dt_list <- list()
+# i <- 1
+# for (n in seq(1,length(table_list), 4)) {
+#   # print(n)
+#   l <- n+4
+#
+#   seq_questions_dt_list[[i]] <-
+#     Reduce(function(...) merge(..., by = match_vars), table_list[n:l])
+#   i <- i + 1
+# }
+#
+# seq_questions_dt <-  Reduce(function(...) merge(..., by = match_vars), seq_questions_dt_list[1:2])
+#
+#
+#
+# # eventually:
+#
+# data_dt <- merge(loop_questions_dt, seq_questions_dt, by = match_vars, all.x  = T)
+#
 
-  seq_questions_dt_list[[i]] <-
-    Reduce(function(...) merge(..., by = match_vars), table_list[n:l])
-  i <- i + 1
+
+
+merge_tables <- function(t1, t2, all) {
+  mergeby <- intersect(names(t1), names(t2))
+  merge(t1, t2, by = mergeby, all = all)
+  # merge(t1,t2, by = mergeby, all = all)
 }
-
-seq_questions_dt <-  Reduce(function(...) merge(..., by = match_vars), seq_questions_dt_list[1:2])
-
-
-
-# eventually:
-
-data_dt <- merge(loop_questions_dt, seq_questions_dt, by = match_vars, all.x  = T)
-
-
-
-
-
 #Approach 2
 #
 table_list <- list()
@@ -203,20 +207,39 @@ for (q in unique(seq_questions$var_original)[1:100]) {
     if(is.na(tables_dt)) {
       tables_dt <- q_long
     } else {
-
+      browser()
+      lapply(tables_dt, class)
+      lapply(q_long, class)
       tables_dt <- merge_tables(tables_dt, q_long, all = T)
     }
 
   }
 }
 
-View(  tables_dt)
-
+c
 merge_tables <- function(t1, t2, all) {
-  mergeby <- intersect(names(t1), names(t2))
-  merge(t1, t2, by = mergeby, all = all)
+  # browser()
+  # mergeby <- intersect(names(t1), names(t2))
+  # browser()
+  mergeby <- c("respondent", "table_row")
+  # merge(t1, t2, by = mergeby)
+  if (nrow(t1[table_row == t2$table_row]) == 0) {
+    t3 <- rbind(t1,t2, fill = T)
+  } else {
+    # browser()
+    tr <- t2$table_row
+    if (tr == 2) browser()
+    t2a <- t2[, -mergeby, with = F]
+    nam <- names(t2a)
+    t1[table_row == tr, c(nam) := t2a[, get(nam)]]
+  }
+  # te
   # merge(t1,t2, by = mergeby, all = all)
 }
+
+View(  tables_dt)
+
+
 #
 #
 # seq_questions_dt <-
