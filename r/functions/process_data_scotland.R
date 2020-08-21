@@ -2,7 +2,8 @@ library(readxl)
 library(snakecase)
 library(data.table)
 
-#
+
+# dem_filename <- "data/raw_data/sc/panel_a/wave_1/Panel A Demographics - Raw Data (EMPTY DATASET).xlsx"
 # dem_dt <- readxl::read_xlsx(dem_filename)
 # nrow(dem_dt)
 # cols <- names(dem_dt)
@@ -17,14 +18,14 @@ rd_dt <- readxl::read_xlsx(rd_filename)
 rd_dt[1,] <- 1
 rd_dt <- as.data.table(rd_dt)
 rd_dt[, Respondent := 1:nrow(rd_dt)]
-rd_dt[1,]
+# rd_dt[1,]
 
 # standardize names
 match_rd_dt <- rd_dt
 names(match_rd_dt) <- snakecase::to_snake_case(names(rd_dt))
 
 
-names(rd_dt)
+# names(rd_dt)
 rd <- data.table(var_original = names(rd_dt))
 rd[, var_short := gsub(":.*|\\/", "", var_original)]
 rd[, var := ifelse(!grepl("\\.|[a-z]|[A-Z]", var_short), paste0(var_short, ".", rowid(var_short)), var_short)]
@@ -48,57 +49,12 @@ rdu <- unique(rd, by = "var_question")
 # View(rdu)
 fwrite(rdu, "data/contact_questions.csv")
 
-
-
-#
-
-
-loop_questions <- rd[var_short %in% c(28.3)]
-
-loop_questions
-table_list <- list()
-id_vars <- "respondent"
-for (q in unique(loop_questions$var_question)) {
-  varname <- snakecase::to_snake_case(q)
-
-  cs <- grep(varname, names(match_rd_dt), value = T)
-
-  q_wide <- match_rd_dt[,c(id_vars, cs), with = F]
-  q_long <- melt(q_wide, id.cols = id_vars,
-                 measure.vars = cs,
-                 value.name = varname)
-  q_long[grepl("[0-9]_[0-9]", variable),
-         table_row := as.numeric(sub("^[^_]*_([^_]*).*", "\\1", variable))]
-  q_long <- q_long[!grepl("[0-9]_[0-9]", variable), table_row := 0]
-  q_long[, variable := NULL]
-  table_list[[paste0("table_", varname)]] <- q_long
-}
-
-match_vars <- c(id_vars, "table_row")
-loop_questions_dt <- Reduce(function(...) merge(..., by = match_vars), table_list)
-# PROBLEM: table_row == 0 and respondent == 1 is not merging into one row but several (??)
-
-
-
-# Problem: not all var are numbers
-rd[, varn := as.numeric(var)]
-
-
-rd[grepl("\\[question id=", var_original), question_id := as.numeric(gsub('.*\\[question id="|\\".*', "", var_original)) ]
-rd <- rd[order(varn)][!is.na(question_id), seq_id := .GRP, by = question_id]
-rd[order(varn), seq_id := seq_id[1], .(cumsum(!is.na(seq_id)))]
-
-seq_questions <- rd[!is.na(seq_id) & loop_question == FALSE]
-
-# PROBLEM: seq_id == 4 are data for several contacts
-seq_questions <- seq_questions[seq_id != 4]
-
-
 merge_tables <- function(t1, t2, all) {
   # mergeby <- intersect(names(t1), names(t2))
   mergeby <- c("respondent", "table_row")
   # merge(t1, t2, by = mergeby)
-  if (nrow(t1[table_row == t2$table_row]) == 0) {
+  # if (length(t2$table_row) > 1) browser()
+  if (nrow(t1[table_row %in% t2$table_row]) == 0) {
     t3 <- rbind(t1,t2, fill = T)
   } else {
     tr <- t2$table_row
@@ -110,6 +66,63 @@ merge_tables <- function(t1, t2, all) {
   t3
 }
 
+
+#
+
+
+loop_questions <- rd[var_short %in% c(28.3)]
+
+loop_questions
+table_list <- list()
+id_vars <- "respondent"
+tables_dt_symptoms  <- NA
+for (q in unique(loop_questions$var_question)) {
+  varname <- snakecase::to_snake_case(q)
+
+  cs <- grep(varname, names(match_rd_dt), value = T)
+  cs <- grep("^28_", names(match_rd_dt), value = T)
+  # browser()
+  q_wide <- match_rd_dt[,c(id_vars, cs), with = F]
+  q_long <- melt(q_wide, id.cols = id_vars,
+                 measure.vars = cs,
+                 value.name = varname)
+  q_long[grepl("[0-9]_[0-9]", variable),
+         table_row := as.numeric(sub("^[^_]*_([^_]*).*", "\\1", variable))]
+  q_long <- q_long[!grepl("[0-9]_[0-9]", variable), table_row := 0]
+  q_long[, variable := NULL]
+  # browser()
+  if (is.na(tables_dt_symptoms) | length(tables_dt_symptoms) == 0) {
+    tables_dt_symptoms <- q_long
+  } else{
+    # if (q == " _None of these") browser()
+    tables_dt_symptoms <- merge_tables(tables_dt_symptoms, q_long, all = T)
+  }
+}
+
+# View(tables_dt_symptoms)
+
+match_vars <- c(id_vars, "table_row")
+loop_questions_dt <- Reduce(function(...) merge(..., by = match_vars), table_list)
+# PROBLEM: table_row == 0 and respondent == 1 is not merging into one row but several (??)
+
+
+
+# # Problem: not all var are numbers
+rd[, varn := as.numeric(var)]
+#
+#
+rd[grepl("\\[question id=", var_original), question_id := as.numeric(gsub('.*\\[question id="|\\".*', "", var_original)) ]
+rd <- rd[order(varn)][!is.na(question_id), seq_id := .GRP, by = question_id]
+rd[order(varn), seq_id := seq_id[1], .(cumsum(!is.na(seq_id)))]
+#
+seq_questions <- rd[!is.na(seq_id) & loop_question == FALSE]
+# seq_questions <- seq_questions[seq_id != 4]
+# PROBLEM: seq_id == 4 are data for several contacts
+# seq_questions <- seq_questions[var_short != 27]
+# seq_questions <- seq_questions[!grep("^33\\.|34\\.", var_original)]
+
+
+
 #Approach 2
 #
 table_list <- list()
@@ -118,10 +131,17 @@ q_ids <- data.table()
 base_qid <- NA
 i <- 0
 tables_dt <- NA
-for (q in unique(seq_questions$var_original)[1:1000]) {
-
+for (q in unique(seq_questions$var_original)[1:500]) {
+  # bro
   varname <- snakecase::to_snake_case(q)
   question_id <- as.numeric(gsub('.*\\[question id="|\\".*', "", q))
+  if (is.na(question_id)) question_id <- as.numeric(gsub(".*HM|!.*", "", q))
+  if (is.na(question_id)) question_id <- as.numeric(gsub(".*HM|!.*", "", q))
+  if (is.na(question_id)) {
+    # browser()
+    question_id <- as.numeric(gsub(".*new_person_|_who.*", "", snakecase::to_snake_case(q)))
+  }
+  # if (grepl("hm_[9]", varname)) browser()
 
   if (is.na(question_id) & is.na(base_qid)) {
     message(paste("Skipping:", q))
@@ -146,7 +166,9 @@ for (q in unique(seq_questions$var_original)[1:1000]) {
 
   if (!is.na(qid_seq)) {
     cs <- grep(varname, names(match_rd_dt), value = T)
-    c
+    if(varname == "61_outside") browser()
+    num <- gsub("_.*", "", varname)
+    cs <- grep(paste0("^", num), cs, value = T)
     q_wide <- match_rd_dt[,c(id_vars, cs), with = F]
     q_long <- melt(q_wide, id.cols = id_vars,
                    measure.vars = cs,
@@ -158,12 +180,15 @@ for (q in unique(seq_questions$var_original)[1:1000]) {
     setnames(q_long, "value", col_name)
     q_long[, variable := NULL]
     q_long[, table_row := qid_seq]
+    # brow
     base_qid <- qid_seq
     if(is.na(tables_dt)) {
       tables_dt <- q_long
     } else {
-      lapply(tables_dt, class)
-      lapply(q_long, class)
+      # lapply(tables_dt, class)
+      # lapply(q_long, class)
+      if (length(q_long$table_row) > 1) browser()
+
       tables_dt <- merge_tables(tables_dt, q_long, all = T)
     }
 
