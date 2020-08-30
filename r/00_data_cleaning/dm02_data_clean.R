@@ -14,12 +14,11 @@ source('r/functions/utility_functions.R')
 #   readRDS(file.path("data", country_code_, panel_, wave_, "survey_data.rds"))
 # table(survey$Panel, survey$Wave, survey$Qcountry)
 
-survey <- child_survey
-survey[, survey_type := "child"]
+# survey <- child_survey
+# panel_ <- "panel_ec"
 
-panel_ <- "panel_ec"
-survey[, Panel := "Panel EC"]
-survey[, Wave := "Wave 1"]
+survey <- adult_survey
+
 # only for panel D 1 due to participants responding twice - new raw data coming and will remove
 if (survey$Panel[1] == "Panel D" & survey$Wave[1] == "Wave 1"){
   survey[, minDay := min(.SD), .SDcols = "CurrentDay", by = "Respondent_ID"]
@@ -43,11 +42,11 @@ if (grepl(survey$Qcountry[1], "Scotland")) {
 # dt0 <- dt_
 dt_
 table(dt_$table_row)
-if (dt_$panel[1] == "Panel E") {
-  dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 900]
-}
+# if (dt_$panel[1] == "Panel E") {
+#   dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 900]
+# }
 
-if (dt_$panel[1] == "Panel EC") {
+if (dt_$panel[1] %in% c("Panel E", "Panel EC")) {
   dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
 }
 
