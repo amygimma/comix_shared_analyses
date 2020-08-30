@@ -9,7 +9,6 @@
 
 
 process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FALSE){
-  # browser()
   empty_tables <- NULL
   ## Rename to lower case
   colnames(df) <- tolower(colnames(df))
@@ -52,9 +51,13 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
 
 
     ## Rename the loop variables combine into one column then remove NAs
+    if (!("V7" %in% names(questions_loop))) {
+      questions_loop[, V7 := NA_character_]
+    }
     if (!("V8" %in% names(questions_loop))) {
       questions_loop[, V8 := NA_character_]
     }
+
     questions_loop[, newname := paste0(V5,"_",V6,"_",V7,"_",V8)]
     questions_loop[, "newname"] <- sapply(
       strsplit(questions_loop[, newname], "_"),
@@ -106,7 +109,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
         )
         ## Assign current_q to object table_q
         assign(paste0("table_",q), current_q)
-        # table(table_q66$table_row, useNA = "always")
+
         message("loop")
 
       } else {
@@ -143,7 +146,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   # q75 and q76 are tables but act more like scales
   if (as.character(df$panel[1]) %in% c("Panel A", "Panel C", "Panel D")) {
     participant_table_questions <- grep("q75|q76",  questions_scale$V1, value = TRUE)
-  } else if ((as.character(df$panel[1]) %in% c("Panel E", "Panel F"))) {
+  } else if ((as.character(df$panel[1]) %in% c("Panel E", "Panel EC"))) {
     participant_table_questions <- grep("q79|q80|q81",  questions_scale$V1, value = TRUE)
   }
   # set table row to 0 as it is asked of the participant
@@ -158,6 +161,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   questions_scale <- questions_scale[! newname %in% c("q35", "q36", "q37", "q38",
                                                       "q52", "q55", "Q60")]
   questions_scale[, "tablename" := paste0("table_",V2)]
+
   for(q in unique(questions_scale[, V2])){
     current_q <- questions_scale[V2 == q]
     current_q <- merge(current_q, df, by.x="V1", by.y="variable")
@@ -184,7 +188,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
       #assign in global environment
 
       assign(paste0("table_",q), current_q)
-      message("scale")
+      message(q)
 
     } else {
       message(paste0("table for ", q, " is empty"))
@@ -270,7 +274,9 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   resp[,table_row := 0L]
 
   combine_dtr <- merge(combine_dt, resp, by = match_vars, all = T)
+
   x_dt <- merge(df, combine_dtr, by = c(match_vars), all = TRUE)
-  browser()
+
+  # browser()
   return(x_dt)
 }

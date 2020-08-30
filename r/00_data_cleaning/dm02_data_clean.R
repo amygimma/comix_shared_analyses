@@ -4,19 +4,22 @@ library(data.table)
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_ec"
+  panel_ <- "panel_e"
   wave_ <- "wave_1"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
 
-survey <-
-  readRDS(file.path("data", country_code_, panel_, wave_, "survey_data.rds"))
-table(survey$Panel, survey$Wave, survey$Qcountry)
+# survey <-
+#   readRDS(file.path("data", country_code_, panel_, wave_, "survey_data.rds"))
+# table(survey$Panel, survey$Wave, survey$Qcountry)
 
 survey <- child_survey
 survey[, survey_type := "child"]
 
+panel_ <- "panel_ec"
+survey[, Panel := "Panel EC"]
+survey[, Wave := "Wave 1"]
 # only for panel D 1 due to participants responding twice - new raw data coming and will remove
 if (survey$Panel[1] == "Panel D" & survey$Wave[1] == "Wave 1"){
   survey[, minDay := min(.SD), .SDcols = "CurrentDay", by = "Respondent_ID"]
@@ -37,9 +40,17 @@ if (grepl(survey$Qcountry[1], "Scotland")) {
 # hhm_ids to over 1000  (new houshold members are originally assigned variables
 # of 150 - 156) to group with the adult particpant which is recorded as 999
 #
-dt0 <- dt_
+# dt0 <- dt_
+dt_
 table(dt_$table_row)
-dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 900]
+if (dt_$panel[1] == "Panel E") {
+  dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 900]
+}
+
+if (dt_$panel[1] == "Panel EC") {
+  dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
+}
+
 
 table(dt_$table_row)
 
@@ -133,16 +144,17 @@ if (!is.null(dt_$resp_gender.x)) {
 if (is.null(dt_$q20)) dt_$q20 <- dt_$q20_new
 dt <- change_names(dt_, varnames, tolower(dt_$qcountry))
 
-dt[hhm_contact_yn == "Yes", cnt_gender := hhm_gender]
-dt[hhm_contact_yn == "Yes", cnt_age := hhm_age_group]
 
 dt[, part_id := fcase(
   panel == "Panel A", 10000 + part_id,
   panel == "Panel B", 20000 + part_id,
   panel == "Panel C", 30000 + part_id,
   panel == "Panel D", 40000 + part_id,
-  panel == "Panel E", 50000 + part_id
+  panel == "Panel E", 50000 + part_id,
+  panel == "Panel EC", 60000 + part_id
+
 )]
+table(dt$part_id)
 dt[, part_age := as.numeric(part_age)]
 
 
@@ -222,14 +234,17 @@ dt[, hh_size := factor(hh_size,
                                   "10", "11", "12 or more"))]
 table(dt$hh_size)
 
+dt[is.na(cnt_age), cnt_age := hhm_age_group]
+dt[is.na(cnt_gender), cnt_gender := hhm_gender]
+
 
 ### Do not change these age bands as they are fixed in the survey.
 ## Add in min and max age group
-age_groups <- c("Under 1", "1-4", "5-9",  "10-14", "15-19", "20-24",
+age_groups <- c("Under 1", "1-4", "5-9", "10-14", "12-15", "15-19", "16-17", "18-19", "20-24",
                 "25-34", "35-44", "45-54", "55-64", "65-69", "70-74",
                 "75-79", "80-84", "85+")
-age_min <- c(0, 1,  5, 10, 15, 20, 25, 35, 45, 55, 65, 70, 75, 80, 85)
-age_max <- c(1, 4,  9, 14, 19, 24, 34, 44, 54, 64, 69, 74, 79, 84, 100)
+age_min <- c(0, 1,  5, 10, 12, 15, 16, 18, 20, 25, 35, 45, 55, 65, 70, 75, 80, 85)
+age_max <- c(1, 4,  9, 14, 15, 19, 17, 19, 24, 34, 44, 54, 64, 69, 74, 79, 84, 100)
 
 
 for(i in 1:length(age_groups)){
@@ -248,6 +263,9 @@ table(dt$part_age_group, useNA = "always")
 ## Create ID for contacts and households members
 
 dt[row_id != 0, cont_id := paste0(part_id ,"-", row_id, "-", week)]
+if (dt$panel == "Panel EC") {
+  dt[row_id == 0 & hhm_contact_yn == "Yes", cont_id := paste0(part_id ,"-", row_id, "-", week)]
+}
 
 if (!is.null(dt$hhcomp_remove)) {
   # Children's data cleaning: hh_size can be up to 18, remove household contacts
@@ -262,7 +280,7 @@ if (!is.null(dt$hhcomp_remove)) {
   dt[row_id <= 11 | row_id >= 999, hhm_id := row_id]
 }
 
-if (survey$Panel[1] %in% c("Panel C", "Panel D")) {
+if (survey$Panel[1] %in% c("Panel C", "Panel D",  "Panel EC")) {
   # Participant is recorded as both hhm_id = 0 and hhm_id = 999 depending on question
   # Assign part age and gender to contact 999 (hhm_id of participant)
   dt[hhm_id == 999, hhm_age_group := gsub(",", "-", gsub("\\[|\\)", "", part_age_group))]
@@ -320,9 +338,6 @@ dt[,   phys_contact := fcase(
   cnt_phys == "Yes", 1,
   cnt_phys == "No", 0,
   default = NA_real_)]
-
-# dt[is.na(cnt_age), cnt_age := hhm_age_group]
-# dt[is.na(cnt_gender), cnt_gender := hhm_gender]
 
 
 
@@ -509,13 +524,13 @@ mult_contacts_cols <- grep("multiple_contacts_", names(part), value = TRUE)
 
 
 households <- households[, -c("cnt_type", mult_contacts_cols), with = FALSE]
-# households[, phys_contact := as.numeric(phys_contact)]
-
+households[, phys_contact := as.numeric(phys_contact)]
+table(households$cnt_age_est_min, useNA = "always")
 
 
 ### Child surveys
 ###################################
-if (as.character(part$panel[1]) %in% c("Panel C", "Panel D")) {
+if (as.character(part$panel[1]) %in% c("Panel C", "Panel D", "Panel EC")) {
   source("r/00_data_cleaning/dm02a_child_data_clean.R")
 } else {
   part[, survey_type := "adult"]
@@ -606,7 +621,7 @@ if (part$survey_type[1] == "child") {
   if(n_contacts_check + total_mult_contacts != nrow(contacts)){
     stop("Check total number of contact rows")
   }
-  if(!(999 %in% unique(contacts$hhm_id))) {
+  if(!(999 %in% unique(contacts$hhm_id) | 0 %in% unique(contacts$hhm_id))) {
     stop("Adult participant not included in contacts")
   }
 }

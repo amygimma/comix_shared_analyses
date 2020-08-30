@@ -78,10 +78,10 @@ id_vars <- "respondent"
 tables_dt_symptoms  <- NA
 for (q in unique(loop_questions$var_question)) {
   varname <- snakecase::to_snake_case(q)
-
   cs <- grep(varname, names(match_rd_dt), value = T)
   cs <- grep("^28_", names(match_rd_dt), value = T)
   # browser()
+  #
   q_wide <- match_rd_dt[,c(id_vars, cs), with = F]
   q_long <- melt(q_wide, id.cols = id_vars,
                  measure.vars = cs,
@@ -131,20 +131,40 @@ q_ids <- data.table()
 base_qid <- NA
 i <- 0
 tables_dt <- NA
-for (q in unique(seq_questions$var_original)[1:500]) {
-  # bro
+for (q in unique(seq_questions$var_original)) {
+  skip <- F
   varname <- snakecase::to_snake_case(q)
+  num <- gsub("_.*", "", varname)
+  # if (grepl("age_group", varname)) browser()
+
+  if (num %in% c("27")) {
+    skip <- T
+    base_qid <- NA
+  }
+  print(varname)
+  new_seq_id <- FALSE
+  # if (grepl("extent", varname)) browser()
   question_id <- as.numeric(gsub('.*\\[question id="|\\".*', "", q))
-  if (is.na(question_id)) question_id <- as.numeric(gsub(".*HM|!.*", "", q))
-  if (is.na(question_id)) question_id <- as.numeric(gsub(".*HM|!.*", "", q))
+  if(!is.na(question_id)) new_seq_id <- TRUE
+  if (is.na(question_id)) {
+    question_id <- as.numeric(gsub(".*HM|!.*", "", q))
+    if (!is.na(question_id)) base_qid <- question_id
+  }
   if (is.na(question_id)) {
     # browser()
     question_id <- as.numeric(gsub(".*new_person_|_who.*", "", snakecase::to_snake_case(q)))
+    if (!is.na(question_id)) base_qid <- question_id
+
+  }
+  if (is.na(question_id)) {
+    question_id <- as.numeric(strsplit(varname, "_")[[1]][2])
+    if (!is.na(question_id)) base_qid <- question_id
   }
   # if (grepl("hm_[9]", varname)) browser()
 
   if (is.na(question_id) & is.na(base_qid)) {
     message(paste("Skipping:", q))
+    skip <- TRUE
   } else if(is.na(question_id) & !is.na(base_qid)) {
     qid_seq <- base_qid
   } else if (!is.na(question_id)) {
@@ -153,22 +173,39 @@ for (q in unique(seq_questions$var_original)[1:500]) {
     qid_seq <- q_ids[question_id == question_id_]$qid_seq
     if (is.null(qid_seq) | length(qid_seq) == 0) {
       # create qid_seq
-      i <- i + 1
-      x <- data.table(question_id = question_id)
-      x[, qid_seq := i]
-      q_ids <- rbind(q_ids, x, fill = T)
-      qid_seq <- q_ids[question_id == question_id_]$qid_seq
+      # if(new_seq_id) i <- i + 1
+      if (nchar(question_id) > 3) {
+        i <- i + 1
+        x <- data.table(question_id = question_id)
+        x[, qid_seq := i]
+        q_ids <- rbind(q_ids, x, fill = T)
+        qid_seq <- q_ids[question_id == question_id_]$qid_seq
+        base_qid <- qid_seq
+      } else {
+        # browser()
+        qid_seq <- question_id
+      }
     }
   } else {
     print("else")
     browser()
   }
 
-  if (!is.na(qid_seq)) {
+
+
+  if(skip) browser()
+  if (!is.na(qid_seq) & !skip) {
     cs <- grep(varname, names(match_rd_dt), value = T)
-    if(varname == "61_outside") browser()
+    # if(varname == "61_outside") cs <- "61_outside"
     num <- gsub("_.*", "", varname)
-    cs <- grep(paste0("^", num), cs, value = T)
+    # if (num == "134") browser()
+    # cs <- grep(paste0("^", num), cs, value = T)
+    # 61 and 73
+    if (varname  == "61_outside")  cs <- "61_outside"
+    if (num %in% c("73", "74", "76", "81", "93", "94", "96")) {
+      cs <- grep(paste0("^", num), cs, value = T)
+    }
+
     q_wide <- match_rd_dt[,c(id_vars, cs), with = F]
     q_long <- melt(q_wide, id.cols = id_vars,
                    measure.vars = cs,
@@ -181,7 +218,6 @@ for (q in unique(seq_questions$var_original)[1:500]) {
     q_long[, variable := NULL]
     q_long[, table_row := qid_seq]
     # brow
-    base_qid <- qid_seq
     if(is.na(tables_dt)) {
       tables_dt <- q_long
     } else {
@@ -193,6 +229,7 @@ for (q in unique(seq_questions$var_original)[1:500]) {
     }
 
   }
+  if (num == "373")  return()
 }
 
 
