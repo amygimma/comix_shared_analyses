@@ -1,6 +1,7 @@
 # Custom for CoMix Repo
 raw_data/*
 data/*
+outputs/*
 
 # Extra careful
 *.spss
