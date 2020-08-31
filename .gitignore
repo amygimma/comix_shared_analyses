@@ -2,6 +2,7 @@
 raw_data/*
 data/*
 outputs/*
+temp/*
 
 # Extra careful
 *.spss
