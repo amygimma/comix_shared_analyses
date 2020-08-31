@@ -18,6 +18,7 @@ source('r/functions/utility_functions.R')
 # panel_ <- "panel_ec"
 
 survey <- adult_survey
+panel_ <- "panel_e"
 
 # only for panel D 1 due to participants responding twice - new raw data coming and will remove
 if (survey$Panel[1] == "Panel D" & survey$Wave[1] == "Wave 1"){
@@ -28,9 +29,9 @@ if (survey$Panel[1] == "Panel D" & survey$Wave[1] == "Wave 1"){
 
 if (grepl(survey$Qcountry[1], "Scotland")) {
   stop("Scottish survey")
-} else if (grepl("A|B|C|D", survey$Panel)) {
+} else if (grepl("A|B|C|D", survey$Panel[1])) {
   dt_ <- process_data(survey)
-} else if (grepl("E", survey$Panel)) {
+} else if (grepl("E", survey$Panel[1])) {
   # dt_ <- process_data_v2(survey)
   dt_ <- process_data(survey)
 
@@ -171,6 +172,7 @@ dt <- add_week_number(dt)
 dt[, survey_date := as.Date(paste0(year,"-", month,"-", day ))]
 dt[, date := survey_date - 1]
 
+
 # cols <- names(dt)[grep("work_date", names(dt))]
 #
 # if(dt$country_code[1] == "UK" & dt$week[1] < 4) {
@@ -212,14 +214,16 @@ dt[, date := survey_date - 1]
 # table(dt$hhm_seek_gov_info_date)
 # dt[, (cols) := lapply(.SD, spss_date), .SDcols = cols ]
 # table(dt$hhm_seek_gov_info_date)
-
+part_dates <- dt[row_id == 0, list(part_id, date)]
+dt[,date := NULL]
+dt <- merge(dt, part_dates, by = "part_id")
 dt[, weekday := weekdays(date - 1)]
 dt[, survey_weekday := weekdays(date)]
 
 
 
 table(dt$hh_size, useNA = "always")
-dt[, hh_size := fcase(
+dt[!is.na(hh_size), hh_size := fcase(
   hh_size == "11 or more", 12,
   hh_size == "None", 1,
   as.numeric(hh_size) %in% seq(1,10), as.numeric(hh_size))
@@ -227,7 +231,7 @@ dt[, hh_size := fcase(
 table(dt$hh_size, useNA = "always")
 
 # Save as factor to be clear that 12 is "12 or more"
-dt[, hh_size := factor(hh_size,
+dt[!is.na(hh_size), hh_size := factor(hh_size,
                        levels = seq(1,12,1),
                        labels = c("1","2", "3", "4", "5", "6", "7", "8", "9",
                                   "10", "11", "12 or more"))]
@@ -239,11 +243,11 @@ dt[is.na(cnt_gender), cnt_gender := hhm_gender]
 
 ### Do not change these age bands as they are fixed in the survey.
 ## Add in min and max age group
-age_groups <- c("Under 1", "1-4", "5-9", "10-14", "12-15", "15-19", "16-17", "18-19", "20-24",
+age_groups <- c("Under 1", "1-4", "5-9", "5-11", "10-14", "12-15", "15-19", "16-17", "18-19", "20-24",
                 "25-34", "35-44", "45-54", "55-64", "65-69", "70-74",
                 "75-79", "80-84", "85+")
-age_min <- c(0, 1,  5, 10, 12, 15, 16, 18, 20, 25, 35, 45, 55, 65, 70, 75, 80, 85)
-age_max <- c(1, 4,  9, 14, 15, 19, 17, 19, 24, 34, 44, 54, 64, 69, 74, 79, 84, 100)
+age_min <- c(0, 1,  5,  5, 10, 12, 15, 16, 18, 20, 25, 35, 45, 55, 65, 70, 75, 80, 85)
+age_max <- c(1, 4,  9, 11, 14, 15, 19, 17, 19, 24, 34, 44, 54, 64, 69, 74, 79, 84, 100)
 
 
 for(i in 1:length(age_groups)){
@@ -262,7 +266,7 @@ table(dt$part_age_group, useNA = "always")
 ## Create ID for contacts and households members
 
 dt[row_id != 0, cont_id := paste0(part_id ,"-", row_id, "-", week)]
-if (dt$panel == "Panel EC") {
+if (dt$panel[1] == "Panel EC") {
   dt[row_id == 0 & hhm_contact_yn == "Yes", cont_id := paste0(part_id ,"-", row_id, "-", week)]
 }
 
@@ -572,7 +576,9 @@ if (!(as.character(part$panel[1]) == "Panel C" & part$wave[1] == "Wave 1")){
 contacts[, cnt_nickname_masked := as.character(cnt_nickname_masked)]
 
 
-
+# part_dates <- part[, list(part_id, date)]
+# contacts[,date := NULL]
+# contacts <- merge(contacts, part_dates, by = "part_id")
 ### Save the data files
 data_path <- "data"
 panel_name <- tolower(gsub(" ", "_", as.character(dt$panel[1])))
