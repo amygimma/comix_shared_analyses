@@ -1,4 +1,3 @@
-rm(list=ls())
 library(here)
 library(data.table)
 here::here()
@@ -12,26 +11,18 @@ source("r/functions/utility_functions.R")
 ##########################################################
 
 
-country_code_path <- c("uk", "nl", "be")[1]
-panel_ <- c("A", "B", "E", "AB", "AC", "BD", "AD", "EEC")[8]
-            #1    2    3    4     5     6     7      8
-filter_region <- c(NA, "ENGLAND")[2]
-
-
+country_code_path <- c("sc")[1]
+panel_ <- c("A", "B")[1]
 
 # Panel details - choose only one
 panel_details <- c(NA, "cap_100", "trim_100", "trim_50", "ind_reported")[1]
 if (length(panel_details) > 1) stop("Choose one option for panel_details")
-# Remove suspicious contacts
-nickname_flags <- c(NA, "rm_non_contacts", "rm_suspected_multiple_contacts")[c(2,3)]
-
-panel_details <- c(panel_details, nickname_flags)
 
 # Default of NA is 2000
-nboots <- c(NA, "boots_5", "boots_100", "boots_500", "boots_1000")[4]
+nboots <- c("boots_10", "boots_100", "boots_250", "boots_500")[1]
 TEST <- FALSE
 
-settings <- c(panel_, filter_region, panel_details, nboots)
+settings <- c(panel_, panel_details, nboots)
 settings <- settings[!is.na(settings)]
 # Saves to filter specific folders so we don't overwrite data
 panel_name <- paste(settings, collapse = "_")
@@ -42,12 +33,13 @@ filter_type <- c("wave_id", "week", "wave_IDS")[3]
 
 
 # Used only when filter_type set to wave_IDS (capitalized to make distinct)
-wave_ids <- c("E 1", "EC 1")
+wave_ids <- c("A 1")
 
 # Week number 1 - 16 (only used if filtering by week)
-# week_name <- 13
+# weeks_ <- c(12)
 
 popyear <- 2020
+# week_name <- 13
 week_name <- FALSE
 
 if(filter_type == "wave_id") wave_name <- paste0("wave_", wave_id)
@@ -55,7 +47,6 @@ if(filter_type == "week") wave_name <- paste0("wave_", week)
 if(filter_type == "wave_IDS") wave_name <- gsub(" ", "_", paste0(wave_ids, collapse = "_"))
 
 #age groups for which to create contact matrix
-
 age_groups <- data.table(
   age_low = c(0, 5, 13, 18, seq(30, 70, 10)),
   age_high = c(4, 12, 17, seq(29, 69, 10), 100)
@@ -72,8 +63,8 @@ bootstrap_type <- c("sample_participants_contacts", "no_sample", "bootstrap_all"
 
 #how many bootstrap samples are needed?
 #set to 0 to disable
-if ("boots_5" %in% nboots) {
-  bootstrap_samples <- 5
+if ("boots_10" %in% nboots) {
+  bootstrap_samples <- 10
 } else if ("boots_1000" %in% nboots) {
   bootstrap_samples <- 1000
 } else if ("boots_100" %in% nboots) {
@@ -87,10 +78,10 @@ if ("boots_5" %in% nboots) {
 #what contact matrix subsets to create?
 contact_filters <- list(
   "all" = list(),
-  "home" = list("cnt_home" = "Yes"),
-  "work" = list("cnt_work" = "Yes"),
-  "school" = list("cnt_school" = "Yes"),
-  "other" = list("cnt_home" = "No", "cnt_work" = "No", "cnt_school" = "No")
+  "home" = list("cnt_home" = 1),
+  "work" = list("cnt_work" = 1),
+  "school" = list("cnt_school" = 1),
+  "other" = list("cnt_home" = 0, "cnt_work" = 0, "cnt_school" = 0)
 )
 
 
@@ -102,16 +93,29 @@ panel_name <- panel_
 
 part <- readRDS(file.path(data_path, "clean_participants.rds"))
 contacts <- readRDS(file.path(data_path, "clean_contacts.rds"))
+
 part <- as.data.table(part)
 contacts <- as.data.table(contacts)
+contacts[, individually_reported := 1]
+contacts[, date := (as.Date(as.character(date)) - 1)]
+contacts[, weekday := weekdays(date)]
 
-table(contacts$wave, contacts$panel, contacts$country_code)
+
+cdates <- unique(contacts[, list(part_id, date, weekday)])
+part <- merge(part, cdates, by = "part_id", all.x = T)
+part[n_cnt_all == 0, date := as.Date("2020-08-06")]
+part[n_cnt_all == 0, weekday := weekdays(date)]
+
+table(part$date, useNA = "always")
+table(part$weekday, useNA = "always")
+
+table(contacts$wave, contacts$panel)
 
 ### FILTER ENGLAND VS NOT
-if ("ENGLAND" %in% filter_region) {
-  not_england <- c("Scotland", "Northern Ireland", "Wales")
-  part <- part[!(regions %in% not_england)]
-}
+# if ("ENGLAND" %in% filter_region) {
+#   not_england <- c("Scotland", "Northern Ireland", "Wales")
+#   part <- part[!(regions %in% not_england)]
+# }
 
 if (filter_type == "wave_id") {
   ## FILTER BY WAVE_ID
@@ -146,22 +150,7 @@ if ("cap_100" %in% panel_details) {
 }
 
 
-if ("ind_reported" %in% panel_details) {
-  ## Filter Individually reported only
-  contacts <- contacts[individually_reported == 1]
-  ## (then update n_cnt_* cols in case they're used later)
-}
-if ("rm_non_contacts" %in% panel_details) {
-  ## Filter suspected non contacts (suspected == 1)
-  contacts <- contacts[suspected_non_contact == 0]
-  ## (then update n_cnt_* cols in case they're used later)
-}
-if ("rm_suspected_multiple_contacts" %in% panel_details) {
-  ## Filter suspected multiple contacts (suspected == 1)
-  contacts <- contacts[suspected_multiple_contact == 0]
-}
-
-part <- add_n_cnts_location_cols(part, contacts, replace_existing_cols = TRUE)
+part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols = TRUE)
 
 ## Check Filters
 table(part$wave, part$panel)
@@ -173,20 +162,21 @@ nrow(part)
 nrow(contacts)
 
 part[, .(mean_cnt_all = mean(n_cnt_all),
-         mean_cnt_not_household = mean(n_cnt_not_household),
+         # mean_cnt_not_household = mean(n_cnt_not_household),
          mean_cnt_not_home = mean(n_cnt_not_home)), by = "panel"]
 
 # Save data description to file for reporting
 fwrite_details(part, contacts, settings, panel_name_, panel_details,
-               filter_region, filter_type, nboots, comix_matrices_path)
+               filter_region = "NA", filter_type, nboots, comix_matrices_path)
 ##########################################################
 #
 #                 END user defined options
 #
 ##########################################################
 
-# need to get population data for current year
-popdata <- getPopdata(country_code_path, year=popyear)
+# load population data
+popdata <- fread("data/sc/scotland_pop_estimates_mid_year_2019.csv")
+
 #age groups in comix
 comix_age_groups <- data.table(
   age_low = c(NA,  NA, NA, NA, 0,  65,  85,  0, 18, 1, 5,  5, 10, 12, 12, 15, 16, 18, 20, 25, 35, 45, 55, 65, 70, 75, 80, 85),
@@ -227,6 +217,7 @@ contacts_bootstrapped <- processContacts(
   contacts, comix_age_groups, popdata, contact_age_process, contact_age_unknown_process,
   bootstrap_samples, participants_bootstrapped_sets, bootstrap_type=bootstrap_type
 )
+mean(contacts_bootstrapped[[1]][, .(n = .N), by = "part_id"]$n)
 
 #different contact sets to calculate matrices for
 contacts_bootstrapped_sets <- lapply(
@@ -306,7 +297,7 @@ saveRDS(
 print(paste("saved_to", file.path(comix_matrices_path, paste0("bootstrap_samples.rds"))))
 
 # Create or call polymod matrices code
-source("r/r_estimates/national/02_manual_contact_matrix_polymod.R")
+# source("r/r_estimates/national/02_manual_contact_matrix_polymod.R")
 # Estimate R0
 source("r/r_estimates/national/03_manual_contact_matrix_impute_process.R")
 

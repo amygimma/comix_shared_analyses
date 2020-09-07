@@ -5,14 +5,15 @@ library(data.table)
 ## Update to the latest data and then savem
 ##
 
-panel_path <- c("panel_a")[1]
+
+panel_path <- c("panel_a", "panel_e", "panel_f")[2]
 spss_country_path <- c("nl_be", "no", "uk")[3]
 path <- file.path("data", "raw_data", spss_country_path, panel_path)
 spss_files <- list.files(path)
 spss_files
 
 # Change index here
-spss_file <- spss_files[1]
+spss_file <- spss_files[2]
 
 spss_file <- file.path(path, spss_file)
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
@@ -38,6 +39,10 @@ if (!"uk" %in% spss_country_path) dt$Panel <- "Panel A"
 if (grepl("NLBE_Wave4", spss_file)) dt$Wave <- "Wave 4"
 
 if (grepl("LSHTM_NO_Wave", spss_file)) dt$Qcountry <- "NO"
+
+if(!is.null(dt$Q_Panel)) {
+  setnames(dt, old = c("Q_Panel", "Q_Wave"), new = c("Panel", "Wave"))
+}
 table(dt$Panel, dt$Wave, dt$Qcountry)
 country_codes <- unique(as.character(dt$Qcountry))
 

@@ -199,6 +199,81 @@ add_n_cnts_location_cols <- function(part_dt, cont_dt, replace_existing_cols = F
 }
 
 
+add_n_cnts_location_cols_scotland <- function(part_dt, cont_dt, replace_existing_cols = FALSE) {
+  # change to replace_existing_cols = TRUE if columns already exist
+  # default FALSE prevents unintended behavior
+  original_part_dt <- part_dt
+  n_cnt_names <- grep("n_cnt_", names(part_dt), value = T)
+  if (replace_existing_cols) {
+    message("replacing n_cnt_* columns")
+    part_dt <- part_dt[, -n_cnt_names, with = FALSE]
+  }
+
+  count_list <- list(
+    # ALL CONTACTs
+    list(varname = "n_cnt_all", exp =  expression(TRUE)),
+    list(varname = "n_cnt_work", exp = expression(cnt_work == 1)),
+    list(varname = "n_cnt_school", exp = expression(cnt_school == 1)),
+    list(varname = "n_cnt_home", exp = expression(cnt_home == 1)),
+    list(varname = "n_cnt_inside", exp = expression(cnt_inside == 1)),
+    list(varname = "n_cnt_outside", exp = expression(cnt_outside == 1)),
+    list(varname = "n_cnt_not_home", exp = expression(cnt_home != 1)),
+    list(varname = "n_cnt_other",
+         exp = expression(cnt_home == 0 & cnt_work == 0 & cnt_school == 0)),
+
+    # PHYSICAL CONTACT
+    # list(varname = "n_cnt_all_phys", exp =  expression(phys_contact == 1)),
+    # list(varname = "n_cnt_work_phys",
+    #      exp = expression(phys_contact == 1 & cnt_work == 1)),
+    # list(varname = "n_cnt_school_phys",
+    #      exp = expression(phys_contact == 1 & cnt_school == 1)),
+    # list(varname = "n_cnt_home_phys",
+    #      exp = expression(phys_contact == 1 & cnt_home == 1)),
+    # list(varname = "n_cnt_inside_phys",
+    #      exp = expression(phys_contact == 1 & cnt_inside == 1)),
+    # list(varname = "n_cnt_outside_phys",
+    #      exp = expression(phys_contact == 1 & cnt_outside == 1)),
+    # list(varname = "n_cnt_not_home_phys",
+    #      exp = expression(phys_contact == 1 & cnt_home == 0)),
+    # list(varname = "n_cnt_other_phys",
+    #      exp = expression(phys_contact == 1 & cnt_home == 0 & cnt_work == 0
+    #                       & cnt_school == 0)),
+    #
+    # PLACES
+    #
+    # list(varname = "n_cnt_health_facility",
+    #      exp =  expression(cnt_health_facility == "cnt_health_facility")),
+    # list(varname = "n_cnt_leisure", exp =  expression(cnt_leisure == 1)),
+    # list(varname = "n_cnt_otheryn", exp =  expression(cnt_otheryn == 1)),
+    # list(varname = "n_cnt_other_house",
+    #      exp =  expression(cnt_other_house == 1)),
+    #
+    # list(varname = "n_cnt_public_transport",
+    #      exp =  expression(cnt_public_transport == 1)),
+    # list(varname = "n_cnt_salon", exp =  expression(cnt_salon == 1)),
+    # list(varname = "n_cnt_shop", exp =  expression(cnt_shop == 1)),
+    # list(varname = "n_cnt_sport", exp =  expression(cnt_sport == 1)),
+    #
+    # list(varname = "n_cnt_supermarket",exp =  expression(cnt_sport == 1)),
+    # list(varname = "n_cnt_worship", exp =  expression(cnt_sport == 1)),
+
+    # MASS CONTACTS
+    list(varname = "n_cnt_individually_reported",
+         exp = expression(individually_reported == 1)),
+    list(varname = "n_cnt_mass_reported",
+         exp = expression(individually_reported == 0))
+  )
+
+  # Add each column
+  for (count_item in count_list) {
+    by <- c("panel", "wave", "country_code", "part_id")
+    part_dt <- add_contact_count_col(part_dt, cont_dt, count_item$varname,
+                                     count_item$exp, by)
+  }
+
+  return(part_dt)
+}
+
 
 
 poly_add_n_cnts_location_cols <- function(part_dt, cont_dt, replace_existing_cols = FALSE) {
@@ -344,6 +419,9 @@ add_week_number <- function(dt) {
 
                       wave_id == "E 1", 20,
                       wave_id == "EC 1", 20
+
+                      wave_id == "E 2", 22,
+                      wave_id == "EC 2", 22
                       )]
   return(dt)
 }

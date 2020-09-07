@@ -33,12 +33,12 @@ contact_age_unknown_process <- c("remove", "sample_partdist", "sample_popdist")[
 
 #how many bootstrap samples are needed?
 #set to 0 to disable
-if ("boots_10" %in% nboots){
-  bootstrap_samples <- 10
+if ("boots_0" %in% nboots){
+  bootstrap_samples <- 0
 } else if ("boots_100" %in% nboots) {
   bootstrap_samples <- 100
-} else if ("boots_500" %in% nboots) {
-  bootstrap_samples <- 500
+} else if ("boots_200" %in% nboots) {
+  bootstrap_samples <- 200
 } else if ("boots_1000" %in% nboots) {
   bootstrap_samples <- 1000
 } else {

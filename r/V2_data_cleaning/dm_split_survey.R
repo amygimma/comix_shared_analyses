@@ -1,4 +1,6 @@
 library(data.table)
+
+original_survey <- survey
 panel_ <- "panel_e"
 survey <-
   readRDS(file.path("data", country_code_, panel_, wave_, "survey_data.rds"))

@@ -1,5 +1,5 @@
 #' getPopdata
-#' 
+#'
 #' Retrieves age-stratified population data for a specific year from UNWPP
 #'
 #' @param country_code country-code path as used in folder structure, e.g. 'uk'
@@ -12,7 +12,7 @@
 #' @examples
 getPopdata <- function(country_code="uk", iso3=NULL, year=as.numeric(format(Sys.Date(), "%Y"))){
   popdata <- qs::qread(file.path(data_path, "../unwpp_data.qs"))
-  
+
   if(is.null(iso3)){
     iso3_ <- switch(
       country_code,
@@ -28,12 +28,12 @@ getPopdata <- function(country_code="uk", iso3=NULL, year=as.numeric(format(Sys.
   } else {
     iso3_ <- iso3
   }
-  
+
   popdata <- popdata[
     iso3 == iso3_
     & year == popyear
   ]
-  
+
   if(nrow(popdata) > 0){
     return(popdata)
   } else {
@@ -42,7 +42,7 @@ getPopdata <- function(country_code="uk", iso3=NULL, year=as.numeric(format(Sys.
 }
 
 #' Process contact ages
-#' 
+#'
 #' Processes ages by sampling contact range, or resampling contacts in bootstrap
 #'
 #' @param contact_data data.table with contacts
@@ -65,7 +65,7 @@ processContacts <- function(
   contact_age_process,
   contact_age_unknown_process,
   bootstrap_samples = 0,
-  bootstrap_type="bootstrap_all", 
+  bootstrap_type="bootstrap_all",
   participants_bootstrapped_sets = NULL
 ){
   #wrapper to do bootstraps
@@ -116,7 +116,7 @@ processContacts <- function(
       return(list(processContacts(contact_data, contact_data_age_groups, population_data, contact_age_process, contact_age_unknown_process, -1)))
     }
   }
-  
+
   #generalize this
   #set lower and upper bound of agegroup
   if(is.null(contact_data_age_groups)){
@@ -125,22 +125,22 @@ processContacts <- function(
     }
     contact_data[!is.na(cnt_age_exact), age_low := cnt_age_exact]
     contact_data[!is.na(cnt_age_exact), age_high := cnt_age_exact]
-    
+
     contact_data[is.na(cnt_age_exact), age_low := cnt_age_est_min]
     contact_data[is.na(cnt_age_exact), age_high := cnt_age_est_max]
-    
+
     contact_data[is.na(cnt_age_exact) & !is.na(age_low) & is.na(age_high), age_low := NA]
     contact_data[is.na(cnt_age_exact) & is.na(age_low) & !is.na(age_high), age_high := NA]
-    
+
     contact_data[is.na(cnt_age_exact) & age_low == age_high, age_est := age_low]
   } else {
     contact_data <- merge(contact_data, contact_data_age_groups, by.x="cnt_age", by.y="name")
   }
-  
+
   #individuals with known (estimate or range) or completely unknown ages are processed differently
   contacts_age_known <- contact_data[!is.na(age_low)]
-  contacts_age_unknown <- contact_data[is.na(age_low)]  
-  
+  contacts_age_unknown <- contact_data[is.na(age_low)]
+
   #use the mean of age in one age-group
   if(contact_age_process == "mean"){
     contacts_age_known[, age_est := round(mean(c(age_low, age_high))), by=seq_len(nrow(contacts_age_known))]
@@ -184,10 +184,10 @@ processContacts <- function(
             }
           )
         )
-      } 
+      }
     }
   }
-  
+
   #sample agegroup of missing contacts from other contacts for same participant
   #sample age within agegroup based on population distribution
   #if participants has no contacts with known age, sample from population
@@ -200,7 +200,7 @@ processContacts <- function(
           size = nrow(contacts_age_unknown[part_id == p]),
           replace = T
         )
-        #sample from population if all contact ages are missing  
+        #sample from population if all contact ages are missing
       } else {
         contacts_age_unknown[part_id == p, "age_est"] <- zsample(
           x = population_data[, age],
@@ -256,12 +256,12 @@ processContacts <- function(
 #'
 #' @examples
 calculate_matrix <- function(
-  contacts, 
-  participants, 
-  population_data, 
+  contacts,
+  participants,
+  population_data,
   age_groups,
-  weight_dayofweek = TRUE, 
-  use_reciprocal_for_missing = FALSE, 
+  weight_dayofweek = TRUE,
+  use_reciprocal_for_missing = FALSE,
   symmetric_matrix = TRUE,
   return_raw_matrix = FALSE
 ){
@@ -269,17 +269,18 @@ calculate_matrix <- function(
     warning("contacts dataset is empty")
     return(NULL)
   }
-  
+
   if(nrow(participants) == 0){
     warning("participants dataset is empty")
     return(NULL)
   }
-  
+
   #weights for weekdays, needs to be adapted for countries where Friday and Saturday is the weekend
   weekday_weights <- data.table(
     day = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
     weight = c(5, 5, 5, 5, 5, 2, 2)
   )
+
 
   #assign age-groups to participants and contacts
   for(i in 1:nrow(age_groups)){
@@ -289,14 +290,48 @@ calculate_matrix <- function(
   participants[, "participant_age_group"] <- factor(participants[, participant_age_group], age_groups$name)
   contacts <- merge(contacts, participants[, c("part_id","participant_age_group")], by = "part_id", allow.cartesian = TRUE)
   contacts[, "contact_age_group"] <- factor(contacts[, contact_age_group], age_groups$name)
-  
+
   if(nrow(contacts) == 0){
     warning("contacts dataset is empty")
     return(NULL)
   }
-  
+
+
+  mean(participants$n_cnt_all)
+  p_age_total <- participants[, .(p_total = .N, participant_age_group = unique(part_age_group)), by = part_age_group][, list(participant_age_group, p_total)][, participant_age_group := fcase(
+    participant_age_group == "[0,1)", "0-1",
+    participant_age_group == "[1,5)", "1-4",
+    participant_age_group == "[5,12)", "5-11",
+    participant_age_group == "[12,16)", "12-15",
+    participant_age_group == "[16,17)", "16-17",
+    participant_age_group == "[18,30)", "18-29",
+    participant_age_group == "[30,40)", "30-39",
+    participant_age_group == "[40,50)", "40-49",
+    participant_age_group =="[50,60)", "50-59",
+    participant_age_group == "[60,70)", "60-69",
+    participant_age_group == "[70,120)", "70-100"
+  )]
+  p_age_total <- merge(p_age_total, age_groups[,list(name)],
+                       by.x = "participant_age_group", by.y = "name", all.y = T)
+  p_age_total[, participant_age_group := factor(participant_age_group, levels = age_groups$name)]
+  p_age_total <- p_age_total[order(participant_age_group)]
+  # contacts[, participant_age_group := as.character(participant_age_group)]
+  table(contacts$participant_age_group)
+  contacts[, .(part_n = length(wave_id)), by = c("contact_age_group", "participant_age_group")]
+
+  contacts1 <- merge(contacts, p_age_total, by = "participant_age_group")
+  mean(contacts1[, .(n = mean(.N)), by = "part_id"]$n)
+  table(contacts1$contact_age_group, contacts$participant_age_group)
+  x <- contacts1[, .(m = .N/p_total[1]), by = c("contact_age_group", "participant_age_group")]
+  x[, contact_age_group := as.character(contact_age_group)]
+  x[, participant_age_group := as.character(participant_age_group)]
+  x[, m := as.numeric(m)]
+  mean(x[, .(s = sum(m)), by = participant_age_group]$s)
+  dt <- dcast(data = x, formula = participant_age_group ~ contact_age_group, value.var = "m")
+  dt <- dcast(data = x, formula = contact_age_group ~ participant_age_group, value.var = "m")
+  mt <- as.matrix(dt, rownames = "contact_age_group")
   # table(contacts$contact_age_group, useNA = "always")
-  
+
   #get total number of contacts between participant- and contact-agegroups
   total_contacts <- lapply(
     unique(weekday_weights[, weight]),
@@ -311,30 +346,46 @@ calculate_matrix <- function(
         if(!weight_dayofweek){w <- 1}
         total_contacts_matrix <- as.matrix(total_contacts[, -"contact_age_group"])*w
         rownames(total_contacts_matrix) <- total_contacts[, contact_age_group]
-        return(total_contacts_matrix) 
+        return(total_contacts_matrix)
       }
     },weekday_weights
   )
+
   #combine matrices (for weekend-days and non-weekend-days)
   total_contacts <- Reduce(
     '+',
     total_contacts[!sapply(total_contacts, is.null)]
   )
-  
+
   #get total number of study participants in age group j
   n <- rowSums(sapply(
     unique(weekday_weights[, weight]),
     function(w, weekday_weights){
       data <- participants[weekday %in% weekday_weights[weight==w, day]]
       if(!weight_dayofweek){w <- 1}
+      browser()
       if(nrow(data) > 0){
-        as.numeric(dcast(data, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*w  
+        as.numeric(dcast(data, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*w
       } else {
         as.numeric(dcast(participants, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*0
-        
       }
     },weekday_weights
   ))
+
+  cut <- function(name) {
+    paste0("[",strsplit(name, "-")[[1]][1],",",
+           (as.numeric(strsplit(name, "-")[[1]][2]) + 1), ")")
+  }
+
+  age_groups[, part_age_group := lapply(name, cut)]
+  n3 <- participants[, (n = .N), by = part_age_group][order(part_age_group)]
+  n3[, part_age_group := as.character(part_age_group)]
+  age_groups[, part_age_group := as.character(part_age_group)]
+  n3 <- merge(n3, age_groups[, list(part_age_group)], by = "part_age_group", all.y = T)
+  n2 <- c(0,0,0,n3$V1)
+  # n <- n2
+  browser()
+
   #average number of daily contacts between participants in age group j and contacts in age group i
   raw_contact_matrix <- t(t(total_contacts)/n)
   raw_contact_matrix[which(is.na(raw_contact_matrix))] <- NA
@@ -346,12 +397,13 @@ calculate_matrix <- function(
 
     return(raw_contact_matrix)
   }
+  browser()
 
   if(use_reciprocal_for_missing){
     #warning("using reciprocity of contacts to impute missing values")
-    imputed_contact_matrix[which(is.na(imputed_contact_matrix))] <- t(imputed_contact_matrix)[which(is.na(imputed_contact_matrix))] 
+    imputed_contact_matrix[which(is.na(imputed_contact_matrix))] <- t(imputed_contact_matrix)[which(is.na(imputed_contact_matrix))]
   }
-  
+
   #adjust for age-population, which may be different in our sample
   if(symmetric_matrix){
     popmat <- sapply(
@@ -362,11 +414,12 @@ calculate_matrix <- function(
     )
     popmat <- sapply(popmat, function(p){p/popmat})
     population_contact_matrix <- 0.5 * (imputed_contact_matrix + t(imputed_contact_matrix) * t(popmat))
-    
+    # browser()
     return(population_contact_matrix)
+
   } else {
     return(imputed_contact_matrix)
-  } 
+  }
 }
 
 
@@ -377,13 +430,13 @@ sample_age_child_participants <- function(part, population_data) {
   }
   age_mins <- sort(unique(part[!is.na(part_age_est_min)]$part_age_est_min))
   age_maxs <- sort(unique(part[!is.na(part_age_est_max)]$part_age_est_max))
-  
+
   for (i in 1:length(age_mins)) {
     pop_data <- population_data[age >= age_mins[i] & age <= age_maxs[i]]
-    part[is.na(part_age) & part_age_est_min >= age_mins[i] & 
+    part[is.na(part_age) & part_age_est_min >= age_mins[i] &
            part_age_est_max <= age_maxs[i], "age_est"] <- zsample(
              x = pop_data[, age],
-             size = nrow(part[is.na(part_age) & part_age_est_min >= age_mins[i] & 
+             size = nrow(part[is.na(part_age) & part_age_est_min >= age_mins[i] &
                                 part_age_est_max <= (age_maxs[i])]),
              replace = T,
              prob = pop_data[, total]
@@ -391,12 +444,12 @@ sample_age_child_participants <- function(part, population_data) {
   }
   part[part_age_est_max == 1, age_est := 0]
   part[!is.na(age_est), part_age := age_est]
-  
+
   # age_bins <- c(0, 5, 13, 18, 30, 40, 50, 60, 70, 120)
-  # part[ ,part_age_group := cut(part$part_age, 
+  # part[ ,part_age_group := cut(part$part_age,
   #                              breaks = age_bins,
   #                              right = FALSE)]
-  
+
   return(part)
 }
 
@@ -417,10 +470,10 @@ sm_to_dt_matrix <- function(cm, study = NULL) {
   if(!is.null(cmatrix$estimated_age_group)){
     cmatrix <- cmatrix[, -c("estimated_age_group"), with = F]
   }
-  
-  cmatrix <- melt(cmatrix, id.vars = "participant_age", 
-                  variable.factor = F, value.factor = F, 
-                  variable.name = "contact_age", 
+
+  cmatrix <- melt(cmatrix, id.vars = "participant_age",
+                  variable.factor = F, value.factor = F,
+                  variable.name = "contact_age",
                   value.name = "contacts")
   cmatrix[, study := study]
   return(cmatrix)
@@ -429,7 +482,7 @@ sm_to_dt_matrix <- function(cm, study = NULL) {
 
 gg_matrix <- function(dt, breaks = seq(0,15,0.5), age_lab = FALSE, limits = c(0,9), multiple_weeks = FALSE, rows = 3, cols = 4) {
   ct_age_unique <- unique(dt[,contact_age])
-  
+
   gplot <- ggplot(dt,
                   aes(x = factor(participant_age,  ct_age_unique),
                       y = factor(contact_age,  ct_age_unique),
@@ -442,20 +495,20 @@ gg_matrix <- function(dt, breaks = seq(0,15,0.5), age_lab = FALSE, limits = c(0,
       x = "Age of participant",
       y = "Age of contact",
       fill = "Contacts"
-    ) + 
+    ) +
     scale_fill_gradientn(
       colors = c("#0D5257","#00BF6F", "#FFB81C"),
       na.value = "#EEEEEE",
       values = c(0, 1, 3, 5, 12)/12,
       breaks =  breaks,
       limits = limits
-      
+
     )  +
-    coord_fixed(ratio = 1, xlim = NULL, 
+    coord_fixed(ratio = 1, xlim = NULL,
                 ylim = NULL, expand = FALSE, clip = "off") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8),
           axis.text.y =  element_text(size = 8))
-  
+
   if(length(age_lab) > 2){
     print("Yes")
     gplot <- gplot +
@@ -465,15 +518,15 @@ gg_matrix <- function(dt, breaks = seq(0,15,0.5), age_lab = FALSE, limits = c(0,
       scale_y_discrete(
         labels = age_lab
       ) +
-      theme_minimal() 
+      theme_minimal()
   }
-  
+
   if(multiple_weeks) {
     gplot <- gplot + facet_wrap(vars(study), ncol = cols, nrow = rows)
   }
   gplot
-  
-  
+
+
 }
 
 

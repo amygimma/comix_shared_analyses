@@ -1,8 +1,8 @@
 library(here)
 library(data.table)
 here::here()
-source("./r/change_R2/manual_contact_matrix_functions.R")
-source("./r/change_R2/regional/00_setup_regions.R")
+source("./r/r_estimates/manual_contact_matrix_functions.R")
+source("./r/r_estimates/regional/00_setup_regions.R")
 source("./r/functions/utility_functions.R")
 
 library(doParallel)
@@ -42,6 +42,8 @@ if(week_name == 2){
   wave_ids <- c("A 9", "B 8", "C 5", "D 5")
 } else if(week_name == 19){
   wave_ids <- c("A 10", "B 9", "C 6", "D 5")
+} else if(week_name == 20){
+  wave_ids <- c("E 1", "EC 1")
 }
 
 print(wave_ids)
@@ -64,6 +66,8 @@ regions <- c("South East", "North West", "Midlands", "South West", "London",
 TEST <- FALSE
 # Usually set to 200, or 1000
 bootstrap_samples <- 200
+# bootstrap_samples <- 10
+
 
 
 settings <- c(panel_name, NA, panel_details, bootstrap_samples)
@@ -99,14 +103,14 @@ contact_filters <- list(
 )
 
 
-source("./r/change_R2/regional/00_add_regional_directories.R")
+source("./r/r_estimates/regional/00_add_regional_directories.R")
 comix_matrices_path <- matrices_path
 comix_outputs_path <- outputs_path
 
 
-source('./r/change_R2/regional/02_manual_contact_matrix_comix_byregion.R')
+source('./r/r_estimates/regional/02_manual_contact_matrix_comix_byregion.R')
 
-by(part$n_cnt_all, part$regions, table)
+by(part$n_cnt_all, part$nhs_regions, table)
 summ <- part[, .(mean_cnt_all = mean(n_cnt_all), N = .N), by = nhs_regions]
 cnt100 <- part[n_cnt_all == 100, .(over_100 = .N), by = nhs_regions]
 summ <- merge(summ, cnt100, by = "nhs_regions", all = T)
@@ -117,7 +121,7 @@ summ
 ### Only use this if you know what you're doing and have checked the values
 replace_na <- TRUE
 
-source('./r/change_R2/regional/03b_compare_with_bbc.R')
+source('./r/r_estimates/regional/03b_compare_with_bbc.R')
 
 
 out_values_rounded[variable== "r_oth"][order(median)]

@@ -1,5 +1,6 @@
 library(data.table)
 library(readxl)
+source("r/functions/utility_functions.R")
 
 dem <- read_xlsx("data/raw_data/sc/panel_a/wave_1/Wave 1A registration data.xlsx",
                  sheet = "SAMPLE A")
@@ -28,8 +29,7 @@ hm_dt <- hm_dt[!(is.na(cnt_age) & is.na(cnt_gender) & is.na(cnt_student) & is.na
 dem <- as.data.table(dem)
 dw <- read_xlsx("data/raw_data/sc/panel_a/wave_1/Wave 1A dataset.xlsx")
 dw <- as.data.table(dw)
-names(dw)
-dmap <- read_xlsx("data/raw_data/sc/panel_a/wave_1/IPSOS_scot_key.xlsx")
+names(dw) <- read_xlsx("data/raw_data/sc/panel_a/wave_1/IPSOS_scot_key.xlsx")
 dmap <- as.data.table(dmap)
 dmap <- dmap[!is.na(new_name)]
 
@@ -128,6 +128,9 @@ part_new_names <- c("cp_number", "part_age", "part_gender", "part_urban_rural",
 length(part_new_names)
 
 part <- dem[, part_names, with = F]
+# IMPORTANT: Remove participants who did not complete the contact survey
+incomplete <- dem[!(`CP Number` %in% dw$`CP number`)]
+part <- part[!cp_number %in% incomplete$`CP Number`]
 setnames(part, part_names, part_new_names)
 age_bins <- c(0, 5, 13, 18, 30, 40, 50, 60, 70, 120)
 

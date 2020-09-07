@@ -1,7 +1,7 @@
 library(here)
 library(data.table)
 here::here()
-source("./r/change_R2/manual_contact_matrix_functions.R")
+source("./r/r_estimates/manual_contact_matrix_functions.R")
 ##########################################################
 #
 #                 User defined options
@@ -11,7 +11,7 @@ source("./r/change_R2/manual_contact_matrix_functions.R")
 ## all_regions for creating contacts matrices per region
 panel_name <- "all_regions"
 # Pick the current week to get this week and last week's data
-week_name <- 19
+week_name <- 20
 ## Only for UK currently
 country_code_path <- "uk"
 # Population data used for the UK
