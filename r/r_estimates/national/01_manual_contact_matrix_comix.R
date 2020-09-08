@@ -15,12 +15,12 @@ source("r/functions/utility_functions.R")
 country_code_path <- c("uk", "nl", "be")[1]
 panel_ <- c("A", "B", "E", "AB", "AC", "BD", "AD", "EEC")[8]
             #1    2    3    4     5     6     7      8
-filter_region <- c(NA, "ENGLAND")[2]
+filter_region <- c(NA, "ENGLAND")[1]
 
 
 
 # Panel details - choose only one
-panel_details <- c(NA, "cap_100", "trim_100", "trim_50", "ind_reported")[1]
+panel_details <- c(NA, "cap_100", "trim_100", "trim_50", "ind_reported")[3]
 if (length(panel_details) > 1) stop("Choose one option for panel_details")
 # Remove suspicious contacts
 nickname_flags <- c(NA, "rm_non_contacts", "rm_suspected_multiple_contacts")[c(2,3)]
@@ -28,7 +28,7 @@ nickname_flags <- c(NA, "rm_non_contacts", "rm_suspected_multiple_contacts")[c(2
 panel_details <- c(panel_details, nickname_flags)
 
 # Default of NA is 2000
-nboots <- c(NA, "boots_5", "boots_100", "boots_500", "boots_1000")[4]
+nboots <- c(NA, "boots_5", "boots_100", "boots_500", "boots_1000")[2]
 TEST <- FALSE
 
 settings <- c(panel_, filter_region, panel_details, nboots)

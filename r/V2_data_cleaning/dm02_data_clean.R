@@ -4,8 +4,8 @@ library(data.table)
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_e"
-  wave_ <- "wave_2"
+  panel_ <- "panel_f"
+  wave_ <- "wave_1"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
@@ -17,43 +17,23 @@ source('r/functions/utility_functions.R')
 # survey <- child_survey
 # panel_ <- "panel_ec"
 source("r/V2_data_cleaning/dm_split_survey.R")
-table(original_survey$Sampletype)
-survey <- adult_survey
+table(full_survey$Sampletype)
 
+survey <- adult_survey
+panel_ <- "panel_f"
+
+# survey <- child_survey
+# panel_ <- "panel_fc"
+
+table(survey$Wave, survey$Panel)
 table(survey$Sampletype)
 
 
-# only for panel D 1 due to participants responding twice - new raw data coming and will remove
-if (survey$Panel[1] == "Panel D" & survey$Wave[1] == "Wave 1"){
-  survey[, minDay := min(.SD), .SDcols = "CurrentDay", by = "Respondent_ID"]
+dt_ <- process_data(survey)
 
-  survey <- survey[CurrentDay == minDay]
-}
-
-if (grepl(survey$Qcountry[1], "Scotland")) {
-  stop("Scottish survey")
-} else if (grepl("A|B|C|D", survey$Panel[1])) {
-  dt_ <- process_data(survey)
-} else if (grepl("E", survey$Panel[1])) {
-  # dt_ <- process_data_v2(survey)
-  dt_ <- process_data(survey)
-
-}
-# Re-calculate the hhm added by particpants in the children's surveys to assign
-# hhm_ids to over 1000  (new houshold members are originally assigned variables
-# of 150 - 156) to group with the adult particpant which is recorded as 999
-#
-# dt0 <- dt_
-dt_
 table(dt_$table_row)
-# if (dt_$panel[1] == "Panel E") {
-#   dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 900]
-# }
 
-if (dt_$panel[1] %in% c("Panel E", "Panel EC")) {
   dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
-}
-
 
 table(dt_$table_row)
 
@@ -73,16 +53,17 @@ if (is.null(dt_$hhcomp_remove)) {
 
   n_households_check <- sum((dt_$table_row <= 19 |
                                dt_$table_row >= 999) & dt_$table_row != 0,
-                            na.rm = T)
+                               na.rm = T)
 } else {
   # household check - adult surveys:  hhm <= 19
   #  children's surveys: account for the adult participant (999) and household
   #  members added after the first round (1000 or over) AND remove household
   #  members which have been removed by the participant
   #
+
   n_households_check <- sum(
-    ((dt_$table_row <= 19 | dt_$table_row >= 999) & dt_$table_row != 0) &
-      (is.na(dt_$hhcomp_remove) | is.na(dt_$hhcomp_remove) | ( dt_$hhcomp_remove == "No")), na.rm = T)
+    ((dt_$table_row <= 19 | dt_$table_row >= 999 & dt_$table_row != 0)) &
+      (is.na(dt_$hhcomp_remove)  | ( dt_$hhcomp_remove == "No")), na.rm = T)
 }
 
 # on children's survey, table_row 999 is the responder, and would be counted twice
@@ -104,7 +85,7 @@ varnames <- as.data.table(read.csv("codebook/var_names_v2.csv"))
 
 
 change_names <- function(df, varnames, c_code) {
-  loops <- grep("loop|contact[1-100]|contact[900-998]|hhcomp|_i$", names(df), value = T)
+  loops <- grep("loop|contact[1-100]|contact[900-998]|hhcompremove_[0-9]|hhcompadd_[0-9]|_i$", names(df), value = T)
   df <- df[, -loops, with = F]
 
   c_codes <- c(be = "be", uk = "uk", nl = "nl")
@@ -143,10 +124,12 @@ dt[, part_id := fcase(
   panel == "Panel C", 30000 + part_id,
   panel == "Panel D", 40000 + part_id,
   panel == "Panel E", 50000 + part_id,
-  panel == "Panel EC", 60000 + part_id
+  panel == "Panel EC", 60000 + part_id,
+  panel == "Panel F", 70000 + part_id,
+  panel == "Panel FC", 80000 + part_id
 
 )]
-table(dt$part_id)
+summary(dt$part_id)
 dt[, part_age := as.numeric(part_age)]
 
 
@@ -217,7 +200,7 @@ table(dt$part_age_group, useNA = "always")
 ## Create ID for contacts and households members
 
 dt[row_id != 0, cont_id := paste0(part_id ,"-", row_id, "-", week)]
-if (dt$panel[1] == "Panel EC") {
+if (dt$panel[1] %in% c("Panel EC", "Panel FC")) {
   dt[row_id == 0 & hhm_contact_yn == "Yes", cont_id := paste0(part_id ,"-", row_id, "-", week)]
 }
 
@@ -226,7 +209,7 @@ if (!is.null(dt$hhcomp_remove)) {
   # which have been removed by the participant (indicated by hhcomp_remove).
   # Adult particpant and new hhm have a row id of >= 999
   # check
-  dt[hhcomp_remove == "Yes" | is.na(hhm_contact_yn), cont_id := NA]
+  dt[hhcomp_remove == "Yes", cont_id := NA]
   dt[(row_id <= 19 | row_id >= 999) & (is.na(hhcomp_remove) |
        hhcomp_remove != "Yes"), hhm_id := row_id]
 } else {
@@ -234,7 +217,7 @@ if (!is.null(dt$hhcomp_remove)) {
   dt[row_id <= 19 | row_id >= 999, hhm_id := row_id]
 }
 
-if (survey$Panel[1] %in% c("Panel C", "Panel D",  "Panel EC")) {
+if (survey$Panel[1] %in% c("Panel C", "Panel D",  "Panel EC", "Panel FC")) {
   # Participant is recorded as both hhm_id = 0 and hhm_id = 999 depending on question
   # Assign part age and gender to contact 999 (hhm_id of participant)
   dt[hhm_id == 999, hhm_age_group := gsub(",", "-", gsub("\\[|\\)", "", part_age_group))]
@@ -422,12 +405,12 @@ mult_contacts_cols <- grep("multiple_contacts_", names(part), value = TRUE)
 households <- households[, -c("cnt_type", mult_contacts_cols), with = FALSE]
 households[, phys_contact := as.numeric(phys_contact)]
 table(households$cnt_age_est_min, useNA = "always")
-
+nrow(households)
 
 ### Child surveys
 ###################################
-if (as.character(part$panel[1]) %in% c("Panel C", "Panel D", "Panel EC")) {
-  source("r/00_data_cleaning/dm02a_child_data_clean.R")
+if (as.character(part$panel[1]) %in% c("Panel C", "Panel D", "Panel EC", "Panel FC")) {
+  source("r/V2_data_cleaning/dm02a_child_data_clean.R")
 } else {
   part[, survey_type := "adult"]
 }
@@ -463,9 +446,9 @@ contacts[, suspected_non_contact := fcase(
 
 part <- add_n_cnts_location_cols(part, contacts)
 
-if (!(as.character(part$panel[1]) == "Panel C" & part$wave[1] == "Wave 1")){
-  part <- part_add_nickname_flag_count(part, contacts)
-}
+# if (!(as.character(part$panel[1]) == "Panel C" & part$wave[1] == "Wave 1")){
+#   part <- part_add_nickname_flag_count(part, contacts)
+# }
 contacts[, cnt_nickname_masked := as.character(cnt_nickname_masked)]
 
 data_path <- "data"
@@ -492,9 +475,11 @@ if (part$survey_type[1] == "adult") {
   if(n_participants_check != nrow(part)){
     stop("Check total number of participant rows")
   }
-  if(n_households_check + n_participants_check != nrow(households)){
+  if(n_households_check != nrow(households)){
     stop("Check total number of household rows")
-
+    table(households$hhm_contact_yn, useNA  = "always")
+    table(households$hhm_id, useNA  = "always")
+    table(households[hhm_id != 0 &  is.na(hhm_contact_yn)]$hhm_id, useNA  = "always")
   }
   if(n_contacts_check + total_mult_contacts != nrow(contacts)){
     stop("Check total number of contact rows")
@@ -508,9 +493,7 @@ if (part$survey_type[1] == "child") {
 
   if(n_households_check != nrow(households)){
     stop("Check total number of household rows")
-    table(households$hhm_contact_yn, useNA  = "always")
-    table(households$hhm_id, useNA  = "always")
-    table(households[hhm_id != 0 &  is.na(hhm_contact_yn)]$hhm_id, useNA  = "always")
+
   }
 
   if(n_contacts_check + total_mult_contacts != nrow(contacts)){
@@ -521,10 +504,10 @@ if (part$survey_type[1] == "child") {
   }
 }
 
-#
-# saveRDS(part, file = file.path(survey_path, "clean_participants.rds"))
-# saveRDS(contacts, file = file.path(survey_path, "clean_contacts.rds"))
-# saveRDS(households, file = file.path(survey_path, "clean_households.rds"))
+
+saveRDS(part, file = file.path(survey_path, "clean_participants.rds"))
+saveRDS(contacts, file = file.path(survey_path, "clean_contacts.rds"))
+saveRDS(households, file = file.path(survey_path, "clean_households.rds"))
 
 # Print the survey path to use in r/dm_data_checks.R
 message(survey_path)

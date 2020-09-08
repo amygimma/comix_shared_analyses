@@ -59,15 +59,14 @@ part[, cnt_gender_nb := cnt_gender]
 
 
 # Remove particpant hmm_id == 0 in favor of hhm_id == 999 with contact info (see main data cleaning file)
-households <- households[hhm_id != 0]
+# households <- households[hhm_id != 0]
 
 # Add participant to contacts if appropriate
-# if (dt$panel == "Panel EC") {
-#   parent_cnts <- dt[row_id == 0 & hhm_contact_yn == "Yes"]
-#   parent_cnts[,cont_id := paste0(part_id ,"-", row_id, "-", week)]
-#
-#   contacts <- merge(contacts, parent_cnts, by = names(contacts))
-# }
+# parent_cnts <- dt[row_id == 0 & hhm_contact_yn == "Yes"]
+# parent_cnts[,cont_id := paste0(part_id ,"-", row_id, "-", week)]
+# #
+# contacts <- merge(contacts, parent_cnts, by = names(contacts))
+
 
 
 setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender", "cnt_gender_nb"),

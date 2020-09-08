@@ -146,7 +146,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   # q75 and q76 are tables but act more like scales
   if (as.character(df$panel[1]) %in% c("Panel A", "Panel C", "Panel D")) {
     participant_table_questions <- grep("q75|q76",  questions_scale$V1, value = TRUE)
-  } else if ((as.character(df$panel[1]) %in% c("Panel E", "Panel EC"))) {
+  } else if ((as.character(df$panel[1]) %in% c("Panel E", "Panel EC", "Panel F", "Panel FC"))) {
     participant_table_questions <- grep("q79|q80|q81",  questions_scale$V1, value = TRUE)
   }
   # set table row to 0 as it is asked of the participant
@@ -213,25 +213,23 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
 
   if (sum(grepl("hhcomp", unique(df$variable))) > 0) {
     # HHCOMPCONFIRM_1
-
     # HHCOMPREMOVE_1
-
-    hhcomp_remove_colnames <-  paste0("hhcompremove_", c(1:11,150:200))
+    hhcomp_remove_colnames <- df$variable[grepl("hhcompremove_[0-9]+", df$variable)]
     table_hhcomp_remove <- df[variable %in% hhcomp_remove_colnames]
     table_hhcomp_remove <- table_hhcomp_remove[!is.na(value) & value != "0"]
     setnames(table_hhcomp_remove, old = "value", new = "hhcomp_remove")
     table_hhcomp_remove <-
       table_hhcomp_remove[, table_row := as.numeric(sub("hhcompremove_", "", variable))]
     table_hhcomp_remove <- table_hhcomp_remove[hhcomp_remove == "Yes"]
+
     table_hhcomp_remove$variable <- NULL
     df <- df[!(variable %in% hhcomp_remove_colnames)]
 
 
     # HHCOMPADD_1_scale
     # ###################
-
     # IPSOS identifies added hh members as 150 - 156
-    hhcomp_add_colnames <-  paste0("hhcompadd_", c(150:156), "_scale")
+    hhcomp_add_colnames <-  df$variable[grepl("hhcompadd_[0-9]+", df$variable)]
     table_hhcomp_add <- df[variable %in% hhcomp_add_colnames]
     table_hhcomp_add <- table_hhcomp_add[!is.na(value) & value != "0"]
     setnames(table_hhcomp_add, old = "value", new = "hhcomp_add")

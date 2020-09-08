@@ -41,10 +41,10 @@ source("./r/r_estimates/manual_contact_matrix_functions.R")
 #get comix bootstrapped matrices
 comix_boots <- readRDS(file.path(comix_matrices_path, "bootstrap_samples.rds"))
 #get polymod bootstrapped matrices
-polymod_boots <- readRDS(file.path(polymod_matrices_path, "bootstrap_samples.rds"))
+# polymod_boots <- readRDS(file.path(polymod_matrices_path, "bootstrap_samples.rds"))
 
 #get BBC national bootstrapped matrices
-load("./data/uk/bbc/bootstrapped_BBC_UK_filled.RData")
+load("../contact_survey_2020/data/uk/bbc/bootstrapped_BBC_UK_filled.RData")
 bbc_boots <- lapply(
  bootstrap.bbc.filled,
  function(x){
@@ -67,8 +67,11 @@ comix_boots_imputed <- lapply(
     out <- lapply(
       1:length(comix_boots[[x]]),
       function(z, x){
+        browser()
         zcomix <- comix_boots[[x]][[z]]
-        zpolym <- polymod_boots[[x]][[z]]
+        # zpolym <- polymod_boots[[x]][[z]]
+        zpolym <- bbc_boots[[x]]
+
 
         non_missing_rows <- which(!is.na(zcomix[1,]))
         non_missing_columns <- which(!is.na(zcomix[,1]))
