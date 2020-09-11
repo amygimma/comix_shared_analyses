@@ -67,7 +67,7 @@ comix_boots_imputed <- lapply(
     out <- lapply(
       1:length(comix_boots[[x]]),
       function(z, x){
-        browser()
+        # browser()
         zcomix <- comix_boots[[x]][[z]]
         # zpolym <- polymod_boots[[x]][[z]]
         zpolym <- bbc_boots[[x]]
@@ -115,6 +115,8 @@ comix_boots_imputed_all2 <- lapply(
   function(x){Reduce('+',x)}
 )
 
+reduced_matrix <- Reduce("+", lapply(comix_boots_imputed_all2,function(x) {x})) / length(comix_boots_imputed_all2)
+
 comix_boots_imputed_all <- lapply(
   1:length(comix_boots_imputed),
   function(x){
@@ -130,24 +132,24 @@ comix_boots_imputed_all <- lapply(
 )
 
 #get POLYMOD matrices by setting
-polymod_boots_all <- lapply(polymod_boots, "[[", "all")
-polymod_boots_setting <- lapply(
-  1:length(polymod_boots),
-  function(x){
-    out <- lapply(
-      names(polymod_boots[[x]])[which(names(polymod_boots[[x]]) != "all")],
-      function(name, x){
-        return(polymod_boots[[x]][[name]])
-      }, x=x
-    )
-    names(out) <- names(polymod_boots[[x]])[which(names(polymod_boots[[x]]) != "all")]
-    return(out)
-  }
-)
-polymod_boots_all2 <- lapply(
-  polymod_boots_setting,
-  function(x){Reduce('+',x)}
-)
+# polymod_boots_all <- lapply(polymod_boots, "[[", "all")
+# polymod_boots_setting <- lapply(
+#   1:length(polymod_boots),
+#   function(x){
+#     out <- lapply(
+#       names(polymod_boots[[x]])[which(names(polymod_boots[[x]]) != "all")],
+#       function(name, x){
+#         return(polymod_boots[[x]][[name]])
+#       }, x=x
+#     )
+#     names(out) <- names(polymod_boots[[x]])[which(names(polymod_boots[[x]]) != "all")]
+#     return(out)
+#   }
+# )
+# polymod_boots_all2 <- lapply(
+#   polymod_boots_setting,
+#   function(x){Reduce('+',x)}
+# )
 
 #get r0 scaling values
 r0_scaling2 <- sapply(
@@ -171,23 +173,23 @@ r0_scaling2 <- sapply(
 #
 
 # ***Use combined setting matrices matrices***
-r0_scaling <- sapply(
-  1:length(comix_boots_imputed_all2),
-  function(x){
-    max(Re(eigen(comix_boots_imputed_all2[[x]], only.values=T)$values[1]))/max(Re(eigen(polymod_boots_all2[[x]], only.values=T)$values[1]))
-  }
-)
+# r0_scaling <- sapply(
+#   1:length(comix_boots_imputed_all2),
+#   function(x){
+#     max(Re(eigen(comix_boots_imputed_all2[[x]], only.values=T)$values[1]))/max(Re(eigen(polymod_boots_all2[[x]], only.values=T)$values[1]))
+#   }
+# )
 
 # Estimate R
 # #################################
 r_oth_scaled_bbc <- r0_scaling2 * r_values
-r_oth_scaled_poly <- r0_scaling * r_values
+# r_oth_scaled_poly <- r0_scaling * r_values
 
 #process estimates
 out <- data.table(
   r_bbc = r_oth_scaled_bbc,
-  r_poly = r_oth_scaled_poly,
-  scaling = r0_scaling
+  # r_poly = r_oth_scaled_poly,
+  scaling = r0_scaling2
 )
 out[,"panel"] <- panel_name
 out <- melt(out, id.vars="panel")
@@ -209,11 +211,17 @@ out_values_rounded[, "variable"] <- factor(out_values_rounded[, variable], c("r_
 
 fwrite(out_values_rounded, file.path(comix_matrices_path, "r0_estimates_panel.csv"))
 
-saveRDS(comix_boots_imputed_all2, file.path(comix_matrices_path, "comix_boots_imputed_all_polymod.rds"))
+saveRDS(comix_boots_imputed_all2, file.path(comix_matrices_path, "comix_boots_imputed_all_bbc.rds"))
 
 # comix_boots_imputed
-saveRDS(comix_boots_imputed, file.path(comix_matrices_path, "comix_boots_imputed_polymod.rds"))
+saveRDS(comix_boots_imputed, file.path(comix_matrices_path, "comix_boots_imputed_bbc.rds"))
 
-message(file.path(comix_matrices_path, "comix_boots_imputed_polymod.rds"))
+message(file.path(comix_matrices_path, "comix_boots_imputed_bbc.rds"))
 print(out_values_rounded)
+
+saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix.rds"))
+
+
+sm_dt <- sm_to_dt_matrix(reduced_matrix, "Scottish CoMix Wave 1A")
+gg_matrix(sm_dt, breaks = seq(0,15,1))
 

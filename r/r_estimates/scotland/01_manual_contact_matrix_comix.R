@@ -1,5 +1,6 @@
 library(here)
 library(data.table)
+library(snakecase)
 here::here()
 source("./r/r_estimates/manual_contact_matrix_functions.R")
 source("r/functions/utility_functions.R")
@@ -96,7 +97,7 @@ contacts <- readRDS(file.path(data_path, "clean_contacts.rds"))
 
 part <- as.data.table(part)
 contacts <- as.data.table(contacts)
-contacts[, individually_reported := 1]
+# contacts[, individually_reported := 1]
 contacts[, date := (as.Date(as.character(date)) - 1)]
 contacts[, weekday := weekdays(date)]
 
@@ -175,8 +176,12 @@ fwrite_details(part, contacts, settings, panel_name_, panel_details,
 ##########################################################
 
 # load population data
-popdata <- fread("data/sc/scotland_pop_estimates_mid_year_2019.csv")
+popdata <- as.data.table(read_xlsx("data/raw_data/sc/pop_breakdown_scot.xlsx"))
+names(popdata) <- snakecase::to_snake_case(names( popdata))
+popdata[, gender := ifelse(gender == "M", "male", "female")]
+popdata <- dcast(age ~ gender, data = popdata, value.var = "population_est")
 
+popdata <- popdata[, total := male + female]
 #age groups in comix
 comix_age_groups <- data.table(
   age_low = c(NA,  NA, NA, NA, 0,  65,  85,  0, 18, 1, 5,  5, 10, 12, 12, 15, 16, 18, 20, 25, 35, 45, 55, 65, 70, 75, 80, 85),

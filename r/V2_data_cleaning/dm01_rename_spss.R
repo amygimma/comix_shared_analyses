@@ -13,7 +13,7 @@ spss_files <- list.files(path)
 spss_files
 
 # Change index here
-spss_file <- spss_files[2]
+spss_file <- spss_files[1]
 
 spss_file <- file.path(path, spss_file)
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
@@ -25,11 +25,13 @@ ncol(dt)
 nrow(dt)
 
 table(dt$Qcountry)
+table(dt$Wave)
 grep("Q76", names(dt), value = TRUE)
 
 
 
 # Needed when the wave is recorded as "Wave3" instead of "Wave 3"
+if (grepl("PFW1", spss_file)) dt[, Wave := "Wave 1"]
 dt[, Wave := as.character(gsub("([a-z])([0-9])", "\\1 \\2", Wave))]
 data_path <- "data"
 

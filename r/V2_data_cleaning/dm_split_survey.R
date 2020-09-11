@@ -8,6 +8,11 @@ names(survey)[duplicated(names(survey))]
 # survey <- as.data.table(survey)
 full_survey <- survey
 
+if(unique(as.character(survey$Wave)) == "Wave 1"){
+  # removes duplicate col
+  survey[,Wave := NULL]
+  survey[,Wave := "Wave 1"]
+}
 
 child_qs <- grep("QP", names(survey), value = T)
 child_cs <- grep("Pcontact", names(survey), value = T)
@@ -51,7 +56,7 @@ child_survey[, survey_type := "child"]
 # grep("contact900", new_names_ec , value = T) # 1
 # grep("Q66_LOOP_94_Q71_9", names(child_survey), value = T) # 1
 # grep("contact900", adult_cols , value = T) # 1
-#
+# #
 # grep("Q23_LOOP_75_Q26", names(adult_survey), value = T) # 5
 # grep("Q23_LOOP_75_Q26", names(child_survey), value = T) # 5
 

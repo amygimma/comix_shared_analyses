@@ -4,7 +4,7 @@ library(data.table)
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_f"
+  panel_ <- "panel_e"
   wave_ <- "wave_1"
 }
 source('r/functions/process_data.R')
@@ -20,20 +20,22 @@ source("r/V2_data_cleaning/dm_split_survey.R")
 table(full_survey$Sampletype)
 
 survey <- adult_survey
-panel_ <- "panel_f"
+panel_ <- "panel_e"
 
 # survey <- child_survey
-# panel_ <- "panel_fc"
+# panel_ <- "panel_ec"
+
 
 table(survey$Wave, survey$Panel)
 table(survey$Sampletype)
+table(survey$survey_type)
 
 
 dt_ <- process_data(survey)
 
 table(dt_$table_row)
 
-  dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
+dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
 
 table(dt_$table_row)
 

@@ -96,7 +96,9 @@ processContacts <- function(
               ))
             #does not resamples contacts during bootstrap
             } else if(bootstrap_type == "no_sample"){
-              return(contact_data[part_id %in% participants_bootstrapped_sets[[x]][, part_id]])
+              # browser()
+              pids <- participants_bootstrapped_sets[[x]]$part_id
+              return(contact_data[part_id %in% pids])
             }
           },
           bootstrap_type,
@@ -363,7 +365,7 @@ calculate_matrix <- function(
     function(w, weekday_weights){
       data <- participants[weekday %in% weekday_weights[weight==w, day]]
       if(!weight_dayofweek){w <- 1}
-      browser()
+      # browser()
       if(nrow(data) > 0){
         as.numeric(dcast(data, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*w
       } else {
@@ -384,7 +386,7 @@ calculate_matrix <- function(
   n3 <- merge(n3, age_groups[, list(part_age_group)], by = "part_age_group", all.y = T)
   n2 <- c(0,0,0,n3$V1)
   # n <- n2
-  browser()
+  # browser()
 
   #average number of daily contacts between participants in age group j and contacts in age group i
   raw_contact_matrix <- t(t(total_contacts)/n)
@@ -397,7 +399,7 @@ calculate_matrix <- function(
 
     return(raw_contact_matrix)
   }
-  browser()
+  # browser()
 
   if(use_reciprocal_for_missing){
     #warning("using reciprocity of contacts to impute missing values")

@@ -175,6 +175,8 @@ nrow(contacts)
 part[, .(mean_cnt_all = mean(n_cnt_all),
          mean_cnt_not_household = mean(n_cnt_not_household),
          mean_cnt_not_home = mean(n_cnt_not_home)), by = "panel"]
+part[, part_id := cp_number]
+contacts[, part_id := cp_number]
 
 # Save data description to file for reporting
 fwrite_details(part, contacts, settings, panel_name_, panel_details,

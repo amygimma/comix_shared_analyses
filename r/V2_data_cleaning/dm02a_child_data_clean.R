@@ -2,6 +2,7 @@
 
 message("Cleaning children's data")
 
+part[, survey_type := "child"]
 # Move particpant data to responder columns
 setnames(part, old = c("part_age_group", "part_gender", "part_gender_nb"),
          new = c("resp_age_group", "resp_gender", "resp_gender_nb"))
