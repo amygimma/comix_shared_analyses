@@ -172,7 +172,7 @@ for (var in unique(dwl$new_name)) {
   if (sum(unique(q$row_id) != 0) == 0) {
     print(var)
 
-    qd <- dcast(cp_number + date + row_id ~ new_name, data = q, var.value = "value")
+    qd <- data.table::dcast(cp_number + date + row_id ~ new_name, data = q, var.value = "value")
     qd <- qd[!is.na(get(var))]
     ptables_list[[var]] <- qd
   }

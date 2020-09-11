@@ -2,7 +2,10 @@ library(data.table)
 library(readxl)
 source("r/functions/utility_functions.R")
 
-dem <- read_xlsx("data/raw_data/sc/panel_a/wave_1/Wave 1A registration data.xlsx",
+
+# Demographic data
+
+dem <- read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A registration data.xlsx",
                  sheet = "SAMPLE A")
 dem <- as.data.table(dem)
 # names(dem) <- snakecase::to_snake_case(names(dem))
@@ -26,69 +29,87 @@ names(hml) <- snakecase::to_snake_case(names(hml))
 hm_dt <- dcast(cp_number + contact_id ~ new_name, data = hml, value.var = "value")
 hm_dt <- hm_dt[!(is.na(cnt_age) & is.na(cnt_gender) & is.na(cnt_student) & is.na(cnt_occupation))]
 
-dem <- as.data.table(dem)
-dw <- read_xlsx("data/raw_data/sc/panel_a/wave_1/Wave 1A dataset.xlsx")
-dw <- as.data.table(dw)
-dmap <- read_xlsx("data/raw_data/sc/IPSOS_scot_key.xlsx")
+
+# Contact data
+
+dmap <- read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 2A")
 # dmap <- read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 1A")
 dmap <- as.data.table(dmap)
-dmap <- dmap[!is.na(new_name)]
+dmap <- dmap[!is.na(var_name)]
+dmap <- dmap[!grepl("x[0-9]+", var_name)]
+dmap[, var_name := gsub(" \\/.*|n_| \\/| |/","",  var_name)]
 
+# dmap[is.na(contact) & is.na(hhm), hhm := 0]
+dmap[, row_id := person_number]
+dmap[grepl("salon", raw_data_col_name), var_name := "cnt_salon"]
+dmap[grepl("In a healthcare setting", raw_data_col_name), var_name := "cnt_healthcare"]
+dmap[grepl("Please list all other", raw_data_col_name), var_name := "contact_nickname"]
+dmap[grepl("throat swab PRIOR to the past 14", raw_data_col_name), var_name := "part_hhm_covid_test_past"]
 
-dmap[, new_name := gsub(" \\/.*|n_| \\/| |/","",  new_name)]
-#
-dmap[is.na(contact) & is.na(hhm), hhm := 0]
-dmap[grepl("salon", Question), new_name := "cnt_salon"]
-dmap[grepl("In a healthcare setting", Question), new_name := "cnt_healthcare"]
-dmap[grepl("Please list all other", Question), new_name := "contact_nickname"]
-dmap[grepl("throat swab PRIOR to the past 14", Question), new_name := "part_hhm_covid_test_past"]
-
-dmap[is.na(contact) & !is.na(hhm), contact := hhm]
-dmap[!is.na(contact) & is.na(hhm), contact := contact + 19]
-dmap[, row_id := contact]
-# dmap[is.na(row_id) , row_id := 0]
+# dmap[is.na(contact) & !is.na(hhm), contact := hhm]
+# dmap[!is.na(contact) & is.na(hhm), contact := contact + 19]
+# dmap[, person_number := ifelse(person_number >= 16, person_number + 4, person_number)]
+# dmap[, row_id := contact]
+# dmap[is.na(row_id) , row_id := 0]Q
 table(dmap$row_id, useNA = "always")
 
-
-# dw[, contact_id := ]
+dw <- read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A dataset.xlsx")
+dw <- as.data.table(dw)
+# dw
 id_vars <- c("CP number", "Date")
-
-questions <- intersect(names(dw), dmap$Question)
+# id_vars <- c("ID", "Date")
+questions <- intersect(names(dw), dmap$raw_data_col_name)
 dw <- dw[, c(questions, id_vars), with = F]
+
+
+# checking to see how many values there are as an early indication that something may be off
+check_dw <- grep("24\\:", names(dw), value = T)[1]
+check_map <- grep("24\\:", dmap$raw_data_col_name, value = T)[1]
+if(check_dw != check_map) stop("map does not align with questions")
+# check_map <- '24: Which of the following age groups does [question id="80974017" output="[answer]" type="text" encoding="utf8"] fit into?'
+# check_dw <- "24: Which of the following best describes this person? (If their situation is currently different because of Coronavirus (COVID-19) please answer in relation to their normal situation)"
+# dw$24
 dw <- dw[!is.na(`CP number`)]
+# setnames(dw, )
+
+
 dwl <- melt(dw, id.vars = id_vars)
 
 # v <- grep("age groups",dwl$variable, value = T)
 #match names
-# dmap[, question_number := gsub("\\:.*", "", Question)]
+# dmap[, question_number := gsub("\\:.*", "", raw_data_col_name)]
 #
-# x <- agrep(dwl$variable, dmap$Question, value = T)
-mname <- match(as.character(dwl$variable), dmap$Question)
-nmes <- dmap$new_name[mname]
+# x <- agrep(dwl$variable, dmap$raw_data_col_name, value = T)
+mname <- match(as.character(dwl$variable), dmap$raw_data_col_name)
+nmes <- dmap$var_name[mname]
 
 # mname <- match(dwl$variable, dmap$row_id)
 cids <- dmap$row_id[mname]
 
-dwl$new_name <- nmes
+dwl$var_name <- nmes
 dwl$row_id <- cids
 
 dwl[,variable := NULL]
-dwl <- dwl[!is.na(value)]
+# dwl <- dwl[!is.na(value)]
 
 names(dwl) <- snakecase::to_snake_case(names(dwl))
+# dwl dwl[!]
+# dt <- dcast(cp_number + date + row_id ~ var_name, data = dwl, value.var = "value")
 
-# dt <- dcast(cp_number + date + row_id ~ new_name, data = dwl, value.var = "value")
+dwl[var_name == "cnt_age"]
 
 tables_list <- list()
-for (var in unique(dwl$new_name)) {
+for (var in unique(dwl$var_name)) {
   print(var)
   # browser()
 
-  q <- dwl[new_name == var]
+  q <- dwl[var_name == var]
+  q <- q[!is.na(value)]
   if (sum(unique(q$row_id) != 0) != 0) {
+    table(q$value)
 
-
-    qd <- dcast(cp_number + date + row_id ~ new_name, data = q, var.value = "value")
+    qd <- dcast(cp_number + date + row_id ~ var_name, data = q, var.value = "value")
+    qd <- as.data.table(qd)
     qd <- qd[!is.na(get(var))]
     tables_list[[var]] <- qd
   }
@@ -105,7 +126,7 @@ dt <- Reduce(function(...) merge(..., by = match_vars, all = T), tables_list)
 # demographics
 #
 names(dem)
-
+hm_dt <- as.data.table(hm_dt)
 setnames(hm_dt,
          old = c("contact_id", "cnt_gender", "cnt_age"),
          new = c("row_id", "hhm_gender", "hhm_age"))
@@ -117,20 +138,20 @@ id_vars <- c("cp_number", "row_id")
 dtm <- merge(dt, hm_dt, by = id_vars, all.x = T)
 table(dtm$cnt_age, useNA = "always")
 dtm[is.na(cnt_age) & !is.na(hhm_age), cnt_age := hhm_age]
-dtm <- dtm[row_id < 999]
+# dtm <- dtm[row_id < 999]
 table(dtm$cnt_age, useNA = "always")
 # dtm <- dtm[!(row_id < 20 & is.na(hhm_contact_yn))]
-dtm[, wave := "Wave 1"]
+dtm[, wave := "Wave 2"]
 dtm[, panel := "Panel A"]
-dtm[, week := 1]
-dtm[, wave_id := "A 1"]
+dtm[, week := 2]
+dtm[, wave_id := "A 2"]
 dtm[, country_code := "sc"]
 dtm[, part_id := cp_number]
-dtm[, individually_reported := 1]
+dtm[, individually_reported := 2]
 write.csv(dtm, "data/raw_data/sc/panel_a/wave_1/contacts_data_v6.csv")
 contacts <- dtm
 
-part_names <- names(dem)[1:10]
+part_names <- names(dem)[1:12][-c(2,6)]
 part_new_names <- c("cp_number", "part_age", "part_gender", "part_urban_rural",
                     "part_ethic_group", "part_ethicity", "part_ethnicity_other",
                     "part_high_risk", "part_medium_risk", "hh_size")
@@ -147,16 +168,16 @@ age_bins <- c(0, 5, 13, 18, 30, 40, 50, 60, 70, 120)
 part[, part_age_group := cut(part_age,
                              breaks = age_bins,
                              right = FALSE)]
-part[, wave := "Wave 1"]
+part[, wave := "Wave 2"]
 part[, panel := "Panel A"]
-part[, week := 1]
-part[, wave_id := "A 1"]
+part[, week := 3]
+part[, wave_id := "A 2"]
 part[, country_code := "sc"]
 part[, part_id := cp_number]
 
 part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols = T)
-write.csv(part, "data/raw_data/sc/panel_a/wave_1/participants_data_individual.csv")
-saveRDS(part, "data/raw_data/sc/panel_a/wave_1/participants_data_individual.rds")
+write.csv(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.csv")
+saveRDS(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.rds")
 saveRDS(part, "data/sc/clean_participants.rds")
 
 
@@ -165,20 +186,23 @@ saveRDS(part, "data/sc/clean_participants.rds")
 ######################################################
 
 ptables_list <- list()
-for (var in unique(dwl$new_name)) {
+pdwl <- dwl[row_id == 0]
+ns <- c()
+for (var in unique(pdwl$var_name)) {
   # browser()
 
-  q <- dwl[new_name == var]
-  if (sum(unique(q$row_id) != 0) == 0) {
+  q <- pdwl[var_name == var]
+  if (sum(unique(q$row_id) != 0) == 0 & !var %in% c("ID", "date")) {
     print(var)
-
-    qd <- dcast(cp_number + date + row_id ~ new_name, data = q, var.value = "value")
+    ns <- c(ns, var)
+    qd <- dcast(cp_number + date + row_id ~ var_name, data = q, var.value = "value")
+    qd <- as.data.table(qd)
     qd <- qd[!is.na(get(var))]
     ptables_list[[var]] <- qd
   }
 }
 
-# match_vars <-
+ns# match_vars <-
 m_dt <- Reduce(function(...) merge(..., by = match_vars, all = T), ptables_list)
 
 id_cols <- c("cp_number", "part_id", "date", "panel", "wave", "wave_id", "country",

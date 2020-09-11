@@ -34,7 +34,7 @@ filter_type <- c("wave_id", "week", "wave_IDS")[3]
 
 
 # Used only when filter_type set to wave_IDS (capitalized to make distinct)
-wave_ids <- c("A 1")
+wave_ids <- c("A 2")
 
 # Week number 1 - 16 (only used if filtering by week)
 # weeks_ <- c(12)
@@ -109,7 +109,7 @@ part[n_cnt_all == 0, weekday := weekdays(date)]
 
 table(part$date, useNA = "always")
 table(part$weekday, useNA = "always")
-
+table(part$wave_id)
 table(contacts$wave, contacts$panel)
 
 ### FILTER ENGLAND VS NOT
@@ -179,7 +179,7 @@ fwrite_details(part, contacts, settings, panel_name_, panel_details,
 popdata <- as.data.table(read_xlsx("data/raw_data/sc/pop_breakdown_scot.xlsx"))
 names(popdata) <- snakecase::to_snake_case(names( popdata))
 popdata[, gender := ifelse(gender == "M", "male", "female")]
-popdata <- dcast(age ~ gender, data = popdata, value.var = "population_est")
+popdata <- data.table::dcast(age ~ gender, data = popdata, value.var = "population_est")
 
 popdata <- popdata[, total := male + female]
 #age groups in comix
@@ -304,5 +304,5 @@ print(paste("saved_to", file.path(comix_matrices_path, paste0("bootstrap_samples
 # Create or call polymod matrices code
 # source("r/r_estimates/national/02_manual_contact_matrix_polymod.R")
 # Estimate R0
-source("r/r_estimates/national/03_manual_contact_matrix_impute_process.R")
+source("r/r_estimates/scotland/03_manual_contact_matrix_impute_process.R")
 

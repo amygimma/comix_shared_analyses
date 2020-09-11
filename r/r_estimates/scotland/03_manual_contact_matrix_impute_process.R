@@ -37,7 +37,8 @@ source("./r/r_estimates/manual_contact_matrix_functions.R")
 # source(file.path(scripts_path, "add_analysis_directories.R"))
 # comix_matrices_path <- matrices_path
 # panel_name <- strsplit(panel_name, "_")[[1]][1]
-
+comix_matrices_path <- "/Users/amygimma/comix/comix_shared_analyses/outputs/sc/panel_a_boots_10/wave_A_1/contact_matrices"
+outputs_path <- "/Users/amygimma/comix/comix_shared_analyses/outputs/sc/panel_a_boots_10/wave_A_1"
 #get comix bootstrapped matrices
 comix_boots <- readRDS(file.path(comix_matrices_path, "bootstrap_samples.rds"))
 #get polymod bootstrapped matrices
@@ -201,11 +202,11 @@ out_values <- out[, .(
   high=quantile(value, 0.975)
 ), by=c("panel", "variable")]
 out_values <- melt(out_values, measure.vars=c("median","mean","low", "iqr_low", "iqr_high","high"), variable.name = "estimate")
-out_values <- dcast(out_values, variable~estimate)
+out_values <- data.table::dcast(out_values, variable~estimate)
 
 out_values <- melt(out_values, measure.vars=c("median","mean","low", "iqr_low", "iqr_high","high"))
 out_values[, value := round(value, 2)]
-out_values_rounded <- dcast(out_values[variable != "scaling"], variable~variable.1)
+out_values_rounded <- data.table::dcast(out_values[variable != "scaling"], variable~variable.1)
 out_values_rounded[, "variable"] <- factor(out_values_rounded[, variable], c("r_bbc","r_poly"), c("BBC Pandemic baseline", "POLYMOD baseline"))
 
 fwrite(out_values_rounded, file.path(comix_matrices_path, "r0_estimates_panel.csv"))
@@ -225,6 +226,13 @@ reduced_matrix <- Reduce("+", lapply(comix_boots,function(x) {x$all})) / length(
 saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix.rds"))
 
 
-sm_dt <- sm_to_dt_matrix(reduced_matrix, "Scottish CoMix Wave 1A")
-gg_matrix(sm_dt, breaks = seq(0,15,1))
+sm_dt <- sm_to_dt_matrix(reduced_matrix, "Scottish CoMix Wave A1")
+saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix_dt.rds"))
+write.csv(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix_dt.csv"))
 
+matrix_plot <- gg_matrix(sm_dt, breaks = seq(0,15,1))
+ggsave(plot =matrix_plot, filename = file.path(comix_matrices_path, "comix_reduced_matrix_plot.png"), width = 7, height =  3.5)
+
+
+# w2 <- sm_dt
+# w2m <- reduced_matrix

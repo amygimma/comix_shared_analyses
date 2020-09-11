@@ -340,11 +340,12 @@ calculate_matrix <- function(
     function(w, weekday_weights){
       data <- contacts[weekday %in% weekday_weights[weight==w, day]]
       if(nrow(data) > 0){
-        total_contacts <- dcast(
+        total_contacts <- data.table::dcast(
           data,
           contact_age_group~participant_age_group, fun.aggregate=length,
           drop=FALSE
         )
+
         if(!weight_dayofweek){w <- 1}
         total_contacts_matrix <- as.matrix(total_contacts[, -"contact_age_group"])*w
         rownames(total_contacts_matrix) <- total_contacts[, contact_age_group]
@@ -367,9 +368,9 @@ calculate_matrix <- function(
       if(!weight_dayofweek){w <- 1}
       # browser()
       if(nrow(data) > 0){
-        as.numeric(dcast(data, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*w
+        as.numeric(data.table::dcast(data, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*w
       } else {
-        as.numeric(dcast(participants, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*0
+        as.numeric(data.table::dcast(participants, .~participant_age_group, fun.aggregate=length, drop=FALSE)[,-"."])*0
       }
     },weekday_weights
   ))
