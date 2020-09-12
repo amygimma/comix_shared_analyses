@@ -198,6 +198,12 @@ mult_contacts[, week := 1]
 mult_contacts[is.na(value), value := 0]
 total_mult_contacts <- sum(as.numeric(mult_contacts$value))
 
+contacts[, part_id := cp_number]
+contacts[, panel := "Panel A"]
+contacts[, wave := "Wave 1"]
+contacts[, wave_id := "A 1"]
+contacts[, country_code := "sc"]
+
 if (length(mult_contacts_cols) == 0) {
   total_mult_contacts <- 0
 } else {
@@ -234,7 +240,11 @@ if (length(mult_contacts_cols) == 0) {
     ]
 
   mult_contacts[, cnt_age := factor(cnt_age, levels = mult_cnt_age_groups)]
-
+  mult_contacts[, part_id := cp_number]
+  mult_contacts[, panel := "Panel A"]
+  mult_contacts[, wave := "Wave 1"]
+  mult_contacts[, wave_id := "A 1"]
+  mult_contacts[, country_code := "sc"]
   # Create new contact rows as reported
   mult_contacts <- mult_contacts[, list(variable = rep(variable, each = value)),by = names(mult_contacts)]
   mult_contacts[, individually_reported := 0]
@@ -251,6 +261,25 @@ if (length(mult_contacts_cols) == 0) {
 
   # contacts[, phys_contact := as.numeric(phys_contact)]
 }
+
+part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols = T)
+
+contacts[, part_id := cp_number]
+contacts[, panel := "Panel A"]
+contacts[, wave := "Wave 1"]
+contacts[, wave_id := "A 1"]
+contacts[, country_code := "sc"]
+contacts[, week := 1]
+
+ctrim <- trim_contacts(contacts, 50)
+ptrim <- add_n_cnts_location_cols_scotland(part, ctrim, replace_existing_cols = T)
+summary(part$n_cnt_all)
+summary(ptrim$n_cnt_all)
+summary(part$n_cnt_individually_reported)
+summary(ptrim$n_cnt_individually_reported)
+summary(part$n_cnt_mass_reported)
+summary(ptrim$n_cnt_mass_reported)
+
 write.csv(contacts, "data/raw_data/sc/panel_a/wave_1/clean_contacts.csv")
 saveRDS(contacts, "data/raw_data/sc/panel_a/wave_1/clean_contacts.rds")
 saveRDS(contacts, "data/sc/clean_contacts.rds")

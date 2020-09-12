@@ -1,5 +1,6 @@
 library(here)
 library(data.table)
+library(ggplot2)
 here::here()
 source("./r/r_estimates/manual_contact_matrix_functions.R")
 #source("./r/change_R2/run_ngm_matrix.R")
@@ -37,8 +38,8 @@ source("./r/r_estimates/manual_contact_matrix_functions.R")
 # source(file.path(scripts_path, "add_analysis_directories.R"))
 # comix_matrices_path <- matrices_path
 # panel_name <- strsplit(panel_name, "_")[[1]][1]
-comix_matrices_path <- "/Users/amygimma/comix/comix_shared_analyses/outputs/sc/panel_a_boots_10/wave_A_1/contact_matrices"
-outputs_path <- "/Users/amygimma/comix/comix_shared_analyses/outputs/sc/panel_a_boots_10/wave_A_1"
+# comix_matrices_path <- "/Users/amygimma/comix/comix_shared_analyses/outputs/sc/panel_a_boots_10/wave_A_1/contact_matrices"
+# outputs_path <- "/Users/amygimma/comix/comix_shared_analyses/outputs/sc/panel_a_boots_10/wave_A_1"
 #get comix bootstrapped matrices
 comix_boots <- readRDS(file.path(comix_matrices_path, "bootstrap_samples.rds"))
 #get polymod bootstrapped matrices
@@ -226,7 +227,7 @@ reduced_matrix <- Reduce("+", lapply(comix_boots,function(x) {x$all})) / length(
 saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix.rds"))
 
 
-sm_dt <- sm_to_dt_matrix(reduced_matrix, "Scottish CoMix Wave A1")
+sm_dt <- sm_to_dt_matrix(reduced_matrix, paste("Scottish CoMix", gsub(" ", "",wave_ids)))
 saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix_dt.rds"))
 write.csv(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix_dt.csv"))
 

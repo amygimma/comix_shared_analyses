@@ -16,11 +16,11 @@ country_code_path <- c("sc")[1]
 panel_ <- c("A", "B")[1]
 
 # Panel details - choose only one
-panel_details <- c(NA, "cap_100", "trim_100", "trim_50", "ind_reported")[1]
+panel_details <- c(NA, "cap_100", "trim_100", "trim_50", "ind_reported")[3]
 if (length(panel_details) > 1) stop("Choose one option for panel_details")
 
 # Default of NA is 2000
-nboots <- c("boots_10", "boots_100", "boots_250", "boots_500")[1]
+nboots <- c("boots_10", "boots_100", "boots_250", "boots_500")[2]
 TEST <- FALSE
 
 settings <- c(panel_, panel_details, nboots)
@@ -92,6 +92,7 @@ source(file.path(scripts_path, "add_analysis_directories.R"))
 comix_matrices_path <- matrices_path
 panel_name <- panel_
 
+# wave_p <- "data/raw_data/sc/panel_a/wave_2/"
 part <- readRDS(file.path(data_path, "clean_participants.rds"))
 contacts <- readRDS(file.path(data_path, "clean_contacts.rds"))
 
@@ -134,12 +135,16 @@ contacts <- contacts[part_id %in% part$part_id & wave_id %in% unique(part$wave_i
 
 if ("trim_100" %in% panel_details) {
   ## Filter Individually reported only
+  message(panel_details)
+  # browser()
   contacts <- trim_contacts(contacts, n = 100)
   ## (then update n_cnt_* cols in case they're used later)
 }
 
 if ("trim_50" %in% panel_details) {
   ## Filter Individually reported only
+  message(panel_details)
+  # browser()
   contacts <- trim_contacts(contacts, n = 50)
   ## (then update n_cnt_* cols in case they're used later)
 }

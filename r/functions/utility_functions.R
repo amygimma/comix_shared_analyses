@@ -84,13 +84,13 @@ age_labs <- c("0-4",
 
 add_contact_count_col <- function(part_dt, cont_dt, new_var_name, filter_exp,
                                   by = c("panel", "wave", "country_code", "part_id")) {
+  # if(new_var_name == "n_cnt_mass_reported") browser()
   count <- cont_dt[eval(filter_exp), .(var = .N), by = by]
   part_dt <- merge(part_dt, count, by = by, all.x = TRUE )
   part_dt[is.na(var), var := 0]
   setnames(part_dt, old = "var", new = new_var_name)
   part_dt
 }
-
 
 add_n_cnts_location_cols <- function(part_dt, cont_dt, replace_existing_cols = FALSE) {
   # change to replace_existing_cols = TRUE if columns already exist
@@ -535,8 +535,8 @@ fwrite_details <- function(part, contacts, settings, panel_name_, panel_details,
     data_filter = tolower(panel_name_),
     filter_type = filter_type,
     filter_region = filter_region,
-    nboots = nboots,
-    regions = paste(unique(part$regions), collapse = ", ")
+    nboots = nboots
+    # regions = paste(unique(part$regions), collapse = ", ")
   )
   fpath <- file.path(comix_matrices_path,  "data_filter_details.csv")
   fwrite(details, fpath)
@@ -604,12 +604,12 @@ mean_summary_dt_by <- function(part_dt, contacts, description_name, byvars, add_
     iqr_home = paste(quantile(n_cnt_home, p = 0.25), "to", quantile(n_cnt_home, p = 0.75)),
     max_cnt_home = quantile(n_cnt_home, p = 1),
 
-    ## NOT HOUSEHOLD
-    mean_cnt_not_household = round(mean(n_cnt_not_household), 2),
-    iqr_25_cnt_not_household = quantile(n_cnt_not_household, p = 0.25),
-    iqr75_cnt_not_household = quantile(n_cnt_not_household, p = 0.75),
-    iqr_not_household = paste(quantile(n_cnt_not_household, p = 0.25), "to", quantile(n_cnt_not_household, p = 0.75)),
-    max_cnt_not_household = quantile(n_cnt_not_household, p = 1),
+    # ## NOT HOUSEHOLD
+    # mean_cnt_not_household = round(mean(n_cnt_not_household), 2),
+    # iqr_25_cnt_not_household = quantile(n_cnt_not_household, p = 0.25),
+    # iqr75_cnt_not_household = quantile(n_cnt_not_household, p = 0.75),
+    # iqr_not_household = paste(quantile(n_cnt_not_household, p = 0.25), "to", quantile(n_cnt_not_household, p = 0.75)),
+    # max_cnt_not_household = quantile(n_cnt_not_household, p = 1),
     ## WORK
     mean_cnt_work = round(mean(n_cnt_work), 2),
     iqr_25_cnt_work = quantile(n_cnt_work, p = 0.25),
@@ -639,32 +639,32 @@ mean_summary_dt_by <- function(part_dt, contacts, description_name, byvars, add_
 
   summary <- cbind(describe, summary)
 
-  if(add_proportion_cols) {
-    # only works in specific cases
-    weeks <- part_dt[, .(total_participants = .N), by = byvars]
-    gt0 <- part_dt[n_cnt_all > 0, .(n_gt0_all = .N), by = byvars]
-    gt1 <- part_dt[n_cnt_all > 1, .(n_gt1_all = .N), by = byvars]
-    gt2 <- part_dt[n_cnt_all > 2, .(n_gt2_all = .N), by = byvars]
-
-    gt0nhh <- part_dt[n_cnt_not_household > 0,
-                      .(n_gt0_not_household = .N), by = byvars]
-    gt1nhh <- part_dt[n_cnt_not_household > 1,
-                      .(n_gt1_not_household = .N), by = byvars]
-    gt2nhh <- part_dt[n_cnt_not_household > 2,
-                      .(n_gt2_not_household = .N), by = byvars]
-
-    counts <- list(gt0, gt1, gt2, gt0nhh, gt1nhh, gt2nhh, weeks)
-    counts <- Reduce(function(...) merge(..., by = byvars), counts)[order(week)]
-
-    counts[, prop_gt0_all := n_gt0_all / total_participants]
-    counts[, prop_gt1_all := n_gt1_all / total_participants]
-    counts[, prop_gt2_all := n_gt2_all / total_participants]
-    counts[, prop_gt0_not_household := n_gt0_not_household / total_participants]
-    counts[, prop_gt1_not_household := n_gt1_not_household / total_participants]
-    counts[, prop_gt2_not_household := n_gt2_not_household / total_participants]
-
-    summary <- merge(summary, counts, by = byvars)
-  }
+  # if(add_proportion_cols) {
+  #   # only works in specific cases
+  #   weeks <- part_dt[, .(total_participants = .N), by = byvars]
+  #   gt0 <- part_dt[n_cnt_all > 0, .(n_gt0_all = .N), by = byvars]
+  #   gt1 <- part_dt[n_cnt_all > 1, .(n_gt1_all = .N), by = byvars]
+  #   gt2 <- part_dt[n_cnt_all > 2, .(n_gt2_all = .N), by = byvars]
+  #
+  #   gt0nhh <- part_dt[n_cnt_not_household > 0,
+  #                     .(n_gt0_not_household = .N), by = byvars]
+  #   gt1nhh <- part_dt[n_cnt_not_household > 1,
+  #                     .(n_gt1_not_household = .N), by = byvars]
+  #   gt2nhh <- part_dt[n_cnt_not_household > 2,
+  #                     .(n_gt2_not_household = .N), by = byvars]
+  #
+  #   counts <- list(gt0, gt1, gt2, gt0nhh, gt1nhh, gt2nhh, weeks)
+  #   counts <- Reduce(function(...) merge(..., by = byvars), counts)[order(week)]
+  #
+  #   counts[, prop_gt0_all := n_gt0_all / total_participants]
+  #   counts[, prop_gt1_all := n_gt1_all / total_participants]
+  #   counts[, prop_gt2_all := n_gt2_all / total_participants]
+  #   counts[, prop_gt0_not_household := n_gt0_not_household / total_participants]
+  #   counts[, prop_gt1_not_household := n_gt1_not_household / total_participants]
+  #   counts[, prop_gt2_not_household := n_gt2_not_household / total_participants]
+  #
+  #   summary <- merge(summary, counts, by = byvars)
+  # }
 
 
   return(summary)
@@ -699,9 +699,10 @@ part_add_nickname_flag_count <- function(part_dt, cont_dt) {
 
 
 trim_contacts <- function(cont_dt, n = 100) {
+
   # order contacts by in order giving individually reported priority, then
   # in order to home, work, and school and assign an index number
-
+  # browser()
   cont_dt[
     order(individually_reported, cnt_home, cnt_work, cnt_school, decreasing  = TRUE),
     part_nth_cont := seq_along(.I), by = c("week", "part_id")]

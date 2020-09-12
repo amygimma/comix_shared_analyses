@@ -5,8 +5,8 @@ source("r/functions/utility_functions.R")
 
 # Demographic data
 
-dem <- read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A registration data.xlsx",
-                 sheet = "SAMPLE A")
+dem <- suppressWarnings(read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A registration data.xlsx",
+                 sheet = "SAMPLE A"))
 dem <- as.data.table(dem)
 # names(dem) <- snakecase::to_snake_case(names(dem))
 
@@ -32,7 +32,7 @@ hm_dt <- hm_dt[!(is.na(cnt_age) & is.na(cnt_gender) & is.na(cnt_student) & is.na
 
 # Contact data
 
-dmap <- read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 2A")
+dmap <- suppressWarnings(read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 2A"))
 # dmap <- read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 1A")
 dmap <- as.data.table(dmap)
 dmap <- dmap[!is.na(var_name)]
@@ -53,7 +53,7 @@ dmap[grepl("throat swab PRIOR to the past 14", raw_data_col_name), var_name := "
 # dmap[is.na(row_id) , row_id := 0]Q
 table(dmap$row_id, useNA = "always")
 
-dw <- read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A dataset.xlsx")
+dw <- suppressWarnings(read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A dataset.xlsx"))
 dw <- as.data.table(dw)
 # dw
 id_vars <- c("CP number", "Date")
@@ -147,9 +147,11 @@ dtm[, week := 2]
 dtm[, wave_id := "A 2"]
 dtm[, country_code := "sc"]
 dtm[, part_id := cp_number]
-dtm[, individually_reported := 2]
+dtm[, individually_reported := 1]
 write.csv(dtm, "data/raw_data/sc/panel_a/wave_1/contacts_data_v6.csv")
 contacts <- dtm
+n_individual_contacts <- nrow(contacts)
+
 
 part_names <- names(dem)[1:12][-c(2,6)]
 part_new_names <- c("cp_number", "part_age", "part_gender", "part_urban_rural",
@@ -170,7 +172,7 @@ part[, part_age_group := cut(part_age,
                              right = FALSE)]
 part[, wave := "Wave 2"]
 part[, panel := "Panel A"]
-part[, week := 3]
+part[, week := 2]
 part[, wave_id := "A 2"]
 part[, country_code := "sc"]
 part[, part_id := cp_number]
@@ -179,6 +181,8 @@ part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols 
 write.csv(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.csv")
 saveRDS(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.rds")
 saveRDS(part, "data/sc/clean_participants.rds")
+write.csv(part, "data/raw_data/sc/panel_a/wave_2/clean_participants.csv")
+saveRDS(part, "data/raw_data/sc/panel_a/wave_2/clean_participants.rds")
 
 
 
@@ -217,7 +221,7 @@ mult_contacts <- melt(m_dt,
                       measure.vars = mult_contacts_cols,
                       id_cols = id_cols)
 
-mult_contacts[, week := 1]
+mult_contacts[, week := 2]
 
 mult_contacts[is.na(value), value := 0]
 total_mult_contacts <- sum(as.numeric(mult_contacts$value))
@@ -263,6 +267,7 @@ if (length(mult_contacts_cols) == 0) {
   mult_contacts <- mult_contacts[, list(variable = rep(variable, each = value)),by = names(mult_contacts)]
   mult_contacts[, individually_reported := 0]
 
+
   if(nrow(mult_contacts) != total_mult_contacts) {
     stop("Check total number of multiple contact rows")
   }
@@ -271,11 +276,46 @@ if (length(mult_contacts_cols) == 0) {
 
   contacts <- rbind(contacts, mult_contacts[, c(bind_cols), with = FALSE],
                     fill = T, all.x = TRUE)
+
   table(contacts$individually_reported)
+  summ <- contacts[individually_reported == 0, .(n = .N), by = "part_id"]
+  summ[n == 1250]$part_id
+  contacts
+  n_mult_contacst <- nrow(mult_contacts)
+  if (nrow(contacts) == (n_individual_contacts + n_mult_contacst)) {
+    stop("Multiple contacts not added")
+  }
 
   # contacts[, phys_contact := as.numeric(phys_contact)]
 }
-write.csv(contacts, "data/raw_data/sc/panel_a/wave_1/clean_contacts.csv")
-saveRDS(contacts, "data/raw_data/sc/panel_a/wave_1/clean_contacts.rds")
+
+contacts[, part_id := cp_number]
+contacts[, panel := "Panel A"]
+contacts[, wave := "Wave 2"]
+contacts[, wave_id := "A 2"]
+contacts[, country_code := "sc"]
+contacts[, week := 2]
+
+part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols = T)
+
+ctrim <- trim_contacts(contacts, 50)
+ptrim <- add_n_cnts_location_cols_scotland(part, ctrim, replace_existing_cols = T)
+summary(ptrim$n_cnt_all)
+summary(part$n_cnt_individually_reported)
+summary(ptrim$n_cnt_individually_reported)
+summary(part$n_cnt_mass_reported)
+summary(ptrim$n_cnt_mass_reported)
+
+if(max(part$n_cnt_mass_reported) == 0 | is.na(max(part$n_cnt_mass_reported))) {
+  stop("Multiple contact count cols not calculated")
+}
+summary(part$n_cnt_all)
+summary(part$n_cnt_mass_reported)
+
+
+
+# summ
+write.csv(contacts, "data/raw_data/sc/panel_a/wave_2/clean_contacts.csv")
+saveRDS(contacts, "data/raw_data/sc/panel_a/wave_2/clean_contacts.rds")
 saveRDS(contacts, "data/sc/clean_contacts.rds")
 
