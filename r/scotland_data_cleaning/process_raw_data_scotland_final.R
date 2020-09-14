@@ -257,8 +257,12 @@ id_cols <- c("cp_number", "part_id", "date", "panel", "wave", "wave_id", "countr
 mult_contacts_cols <- grep("multiple_contacts_", names(m_dt), value = TRUE)
 mult_contacts_cols <- grep("precautions", mult_contacts_cols, value = TRUE, invert = T)
 m_dt[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
+m_dt[, part_id := cp_number]
+part <- merge(part, m_dt[, c("part_id", mult_contacts_cols), with = F], by = "part_id", all.x = T)
 # part[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
-#
+
+
+
 mult_contacts <- melt(m_dt,
                       measure.vars = mult_contacts_cols,
                       id_cols = id_cols)
