@@ -325,8 +325,8 @@ if (length(mult_contacts_cols) == 0) {
   summ <- contacts[individually_reported == 0, .(n = .N), by = "part_id"]
   summ[n == 1250]$part_id
   contacts
-  n_mult_contacst <- nrow(mult_contacts)
-  if (nrow(contacts) == (n_individual_contacts + n_mult_contacst)) {
+  n_mult_contacts <- nrow(mult_contacts)
+  if (nrow(contacts) != (n_individual_contacts + n_mult_contacts)) {
     stop("Multiple contacts not added")
   }
 
@@ -363,7 +363,13 @@ summary(ptrim$n_cnt_mass_reported)
 if(max(part$n_cnt_mass_reported) == 0 | is.na(max(part$n_cnt_mass_reported))) {
   stop("Multiple contact count cols not calculated")
 }
+
+if (nrow(dw) != nrow(part)) stop("Check participant data")
 summary(part$n_cnt_all)
+
+if (nrow(contacts) != (n_individual_contacts)) {
+  stop("Multiple contacts not added")
+}
 # ============================
 # ============================
 # Save data to clean data path
