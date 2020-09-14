@@ -2,13 +2,48 @@ library(data.table)
 library(readxl)
 source("r/functions/utility_functions.R")
 
+# Panel labels
+# ====================
+panel_name <- "Panel A"
+wave_name <- "Wave 2"
+panel_path <- "panel_a"
+wave_path <- "wave_2"
+wave_id <- "A 2"
+week <- 3
+
+# Data file path and names
+# =========================
+base_data_path <- file.path("data", "raw_data", "sc")
+raw_data_path <- file.path("data", "raw_data", "sc", panel_path, wave_path)
+clean_data_path <- file.path("data", "sc", panel_path, wave_path)
 
 # Demographic data
+demographic_filename <- "Wave 2A registration data.xlsx"
+  sheetname_dem <- "SAMPLE A"
 
-dem <- suppressWarnings(read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A registration data.xlsx",
-                 sheet = "SAMPLE A"))
+# Contact data
+data_filename <- "Wave 2A dataset.xlsx"
+
+# Data map
+datamap_filename <- "Question reference.xlsx"
+  sheetname_datamap <- "Wave 2A"
+
+# Create clean data directory
+# ============================
+clean_data_dir <- gsub("/wave_[0-9]", "", clean_data_path)
+dir.create(clean_data_dir, showWarnings = FALSE)
+dir.create(clean_data_path, showWarnings = FALSE)
+
+
+
+# ============================
+# ============================
+# Clean and save data
+# ============================
+# ============================
+dem <- suppressWarnings(read_xlsx(file.path(raw_data_path, demographic_filename),
+                 sheet = sheetname_dem))
 dem <- as.data.table(dem)
-# names(dem) <- snakecase::to_snake_case(names(dem))
 
 dem_ids <- c("CP Number")
 hmq <- grep("HM[0-9]", names(dem), value = T)
@@ -32,7 +67,8 @@ hm_dt <- hm_dt[!(is.na(cnt_age) & is.na(cnt_gender) & is.na(cnt_student) & is.na
 
 # Contact data
 
-dmap <- suppressWarnings(read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 2A"))
+dmap <- suppressWarnings(read_xlsx(
+  file.path(raw_data_path, datamap_filename), sheet = sheetname_datamap))
 # dmap <- read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 1A")
 dmap <- as.data.table(dmap)
 dmap <- dmap[!is.na(var_name)]
@@ -53,7 +89,8 @@ dmap[grepl("throat swab PRIOR to the past 14", raw_data_col_name), var_name := "
 # dmap[is.na(row_id) , row_id := 0]Q
 table(dmap$row_id, useNA = "always")
 
-dw <- suppressWarnings(read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A dataset.xlsx"))
+dw <- suppressWarnings(read_xlsx(file.path(raw_data_path, data_filename)))
+# dw <- suppressWarnings(read_xlsx("data/raw_data/sc/panel_a/wave_2/Wave 2A dataset.xlsx"))
 dw <- as.data.table(dw)
 # dw
 id_vars <- c("CP number", "Date")
@@ -66,35 +103,24 @@ dw <- dw[, c(questions, id_vars), with = F]
 check_dw <- grep("24\\:", names(dw), value = T)[1]
 check_map <- grep("24\\:", dmap$raw_data_col_name, value = T)[1]
 if(check_dw != check_map) stop("map does not align with questions")
-# check_map <- '24: Which of the following age groups does [question id="80974017" output="[answer]" type="text" encoding="utf8"] fit into?'
-# check_dw <- "24: Which of the following best describes this person? (If their situation is currently different because of Coronavirus (COVID-19) please answer in relation to their normal situation)"
-# dw$24
+
 dw <- dw[!is.na(`CP number`)]
-# setnames(dw, )
 
 
 dwl <- melt(dw, id.vars = id_vars)
 
-# v <- grep("age groups",dwl$variable, value = T)
-#match names
-# dmap[, question_number := gsub("\\:.*", "", raw_data_col_name)]
-#
-# x <- agrep(dwl$variable, dmap$raw_data_col_name, value = T)
 mname <- match(as.character(dwl$variable), dmap$raw_data_col_name)
 nmes <- dmap$var_name[mname]
 
-# mname <- match(dwl$variable, dmap$row_id)
 cids <- dmap$row_id[mname]
 
 dwl$var_name <- nmes
 dwl$row_id <- cids
 
 dwl[,variable := NULL]
-# dwl <- dwl[!is.na(value)]
 
 names(dwl) <- snakecase::to_snake_case(names(dwl))
-# dwl dwl[!]
-# dt <- dcast(cp_number + date + row_id ~ var_name, data = dwl, value.var = "value")
+
 
 dwl[var_name == "cnt_age"]
 
@@ -141,15 +167,15 @@ dtm[is.na(cnt_age) & !is.na(hhm_age), cnt_age := hhm_age]
 # dtm <- dtm[row_id < 999]
 table(dtm$cnt_age, useNA = "always")
 # dtm <- dtm[!(row_id < 20 & is.na(hhm_contact_yn))]
-dtm[, wave := "Wave 2"]
-dtm[, panel := "Panel A"]
-dtm[, week := 2]
-dtm[, wave_id := "A 2"]
+dtm[, wave := wave_name]
+dtm[, panel := panel_name]
+dtm[, week := week]
+dtm[, wave_id := wave_id]
 dtm[, country_code := "sc"]
 dtm[, part_id := cp_number]
 dtm[, individually_reported := 1]
-write.csv(dtm, "data/raw_data/sc/panel_a/wave_1/contacts_data_v6.csv")
 contacts <- dtm
+
 n_individual_contacts <- nrow(contacts)
 
 
@@ -170,19 +196,20 @@ age_bins <- c(0, 5, 13, 18, 30, 40, 50, 60, 70, 120)
 part[, part_age_group := cut(part_age,
                              breaks = age_bins,
                              right = FALSE)]
-part[, wave := "Wave 2"]
-part[, panel := "Panel A"]
-part[, week := 2]
-part[, wave_id := "A 2"]
+part[, wave := wave_name]
+part[, panel := panel_name]
+part[, week := week]
+part[, wave_id := wave_id]
 part[, country_code := "sc"]
 part[, part_id := cp_number]
 
 part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols = T)
-write.csv(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.csv")
-saveRDS(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.rds")
-saveRDS(part, "data/sc/clean_participants.rds")
-write.csv(part, "data/raw_data/sc/panel_a/wave_2/clean_participants.csv")
-saveRDS(part, "data/raw_data/sc/panel_a/wave_2/clean_participants.rds")
+# write.csv(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.csv")
+# saveRDS(part, "data/raw_data/sc/panel_a/wave_2/participants_data_individual.rds")
+# saveRDS(part, "data/sc/clean_participants.rds")
+
+write.csv(part, file.path(clean_data_path, "clean_participants.csv"))
+saveRDS(part, file.path(clean_data_path, "clean_participants.rds"))
 
 
 
@@ -290,11 +317,11 @@ if (length(mult_contacts_cols) == 0) {
 }
 
 contacts[, part_id := cp_number]
-contacts[, panel := "Panel A"]
-contacts[, wave := "Wave 2"]
-contacts[, wave_id := "A 2"]
+contacts[, panel := panel_name]
+contacts[, wave := wave_name]
+contacts[, wave_id := wave_id]
 contacts[, country_code := "sc"]
-contacts[, week := 2]
+contacts[, week := week]
 
 part <- add_n_cnts_location_cols_scotland(part, contacts, replace_existing_cols = T)
 
@@ -314,8 +341,7 @@ summary(part$n_cnt_mass_reported)
 
 
 
-# summ
-write.csv(contacts, "data/raw_data/sc/panel_a/wave_2/clean_contacts.csv")
-saveRDS(contacts, "data/raw_data/sc/panel_a/wave_2/clean_contacts.rds")
-saveRDS(contacts, "data/sc/clean_contacts.rds")
+write.csv(contacts, file.path(clean_data_path, "clean_contacts.csv"))
+saveRDS(contacts, file.path(clean_data_path, "clean_contacts.rds"))
+saveRDS(contacts, file.path(clean_data_path, "clean_contacts.rds"))
 
