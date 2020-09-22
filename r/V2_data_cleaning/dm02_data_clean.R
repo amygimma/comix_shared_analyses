@@ -4,8 +4,8 @@ library(data.table)
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_e"
-  wave_ <- "wave_1"
+  panel_ <- "panel_f"
+  wave_ <- "wave_3"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
@@ -14,13 +14,13 @@ source('r/functions/utility_functions.R')
 #   readRDS(file.path("data", country_code_, panel_, wave_, "survey_data.rds"))
 # table(survey$Panel, survey$Wave, survey$Qcountry)
 
-# survey <- child_survey
-# panel_ <- "panel_ec"
+
 source("r/V2_data_cleaning/dm_split_survey.R")
 table(full_survey$Sampletype)
-
-survey <- adult_survey
-panel_ <- "panel_e"
+survey <- child_survey
+# panel_ <- "panel_fc"
+# survey <- adult_survey
+# panel_ <- "panel_e"
 
 # survey <- child_survey
 # panel_ <- "panel_ec"
@@ -391,6 +391,7 @@ if (length(mult_contacts_cols) == 0) {
   contacts <- rbind(contacts, mult_contacts[, c(bind_cols), with = FALSE],
                     fill = T)
   contacts[, phys_contact := as.numeric(phys_contact)]
+  nrow(contacts)
 }
 
 

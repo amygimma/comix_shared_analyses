@@ -6,7 +6,7 @@ library(data.table)
 ##
 
 
-panel_path <- c("panel_a", "panel_e", "panel_f")[2]
+panel_path <- c("panel_a", "panel_e", "panel_f")[3]
 spss_country_path <- c("nl_be", "no", "uk")[3]
 path <- file.path("data", "raw_data", spss_country_path, panel_path)
 spss_files <- list.files(path)
@@ -24,15 +24,11 @@ dt <- as.data.table(df)
 ncol(dt)
 nrow(dt)
 
-table(dt$Qcountry)
-table(dt$Wave)
-grep("Q76", names(dt), value = TRUE)
-
-
-
 # Needed when the wave is recorded as "Wave3" instead of "Wave 3"
 if (grepl("PFW1", spss_file)) dt[, Wave := "Wave 1"]
-dt[, Wave := as.character(gsub("([a-z])([0-9])", "\\1 \\2", Wave))]
+# if (grepl("PEW3", spss_file)) dt[, Wave := "Wave 3"]
+# if (grepl("PEW3", spss_file)) dt[, Panel := "Panel E"]
+
 data_path <- "data"
 
 
@@ -45,6 +41,8 @@ if (grepl("LSHTM_NO_Wave", spss_file)) dt$Qcountry <- "NO"
 if(!is.null(dt$Q_Panel)) {
   setnames(dt, old = c("Q_Panel", "Q_Wave"), new = c("Panel", "Wave"))
 }
+dt[, Wave := as.character(gsub("([a-z])([0-9])", "\\1 \\2", Wave))]
+
 table(dt$Panel, dt$Wave, dt$Qcountry)
 country_codes <- unique(as.character(dt$Qcountry))
 

@@ -222,11 +222,7 @@ print(out_values_rounded)
 
 
 reduced_matrix <- Reduce("+", lapply(comix_boots,function(x) {x$all})) / length(comix_boots_imputed_all2)
-
-
 saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix.rds"))
-
-
 sm_dt <- sm_to_dt_matrix(reduced_matrix, paste("Scottish CoMix", gsub(" ", "",wave_ids)))
 saveRDS(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix_dt.rds"))
 write.csv(reduced_matrix, file.path(comix_matrices_path, "comix_reduced_matrix_dt.csv"))
