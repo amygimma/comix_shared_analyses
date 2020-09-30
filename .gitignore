@@ -3,7 +3,7 @@ raw_data/*
 data/*
 outputs/*
 temp/*
-*.user_setup.R
+*user_setup.R
 
 # Extra careful to protect data
 *.spss
