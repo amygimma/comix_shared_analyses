@@ -13,11 +13,11 @@ source("r/functions/utility_functions.R")
 # Panel labels
 # ====================
 panel_name <- "Panel A"
-wave_name <- "Wave 2"
+wave_name <- "Wave 1"
 panel_path <- "panel_a"
-wave_path <- "wave_2"
-wave_id <- "A 2"
-week <- 3
+wave_path <- "wave_1"
+wave_id <- "A 1"
+week <- 1
 
 # Participant age bins
 age_bins <- c(0, 5, 13, 18, 30, 40, 50, 60, 70, 120)
@@ -29,15 +29,15 @@ raw_data_path <- file.path("data", "raw_data", "sc", panel_path, wave_path)
 clean_data_path <- file.path("data", "sc", panel_path, wave_path)
 
 # Demographic data
-demographic_filename <- "Wave 2A registration data.xlsx"
+demographic_filename <- "Wave 1A registration data.xlsx"
   sheetname_dem <- "SAMPLE A"
 
 # Contact data
-data_filename <- "Wave 2A dataset.xlsx"
+data_filename <- "Wave 1A dataset.xlsx"
 
 # Data map
 datamap_filename <- "Question reference.xlsx"
-  sheetname_datamap <- "Wave 2A"
+  sheetname_datamap <- "Wave 1A"
 
 # Create clean data directory
 # ============================
@@ -62,6 +62,7 @@ dw <- as.data.table(dw)
 dmap <- suppressWarnings(read_xlsx(
   file.path(base_data_path, datamap_filename), sheet = sheetname_datamap))
 # dmap <- read_xlsx("data/raw_data/sc/Question reference.xlsx", sheet = "Wave 1A")
+# dmap <- suppressWarnings(read_xlsx("data/raw_data/sc/IPSOS_scot_key.xlsx"))
 dmap <- as.data.table(dmap)
 
 
@@ -124,12 +125,14 @@ table(dmap$row_id, useNA = "always")
 # ============================
 id_vars <- c("CP number", "Date")
 # id_vars <- c("ID", "Date")
+
 questions <- intersect(names(dw), dmap$raw_data_col_name)
 dw <- dw[, c(questions, id_vars), with = F]
 
 # Check to see how many values there are as an early indication that something may be off
-check_dw <- grep("24\\:", names(dw), value = T)[1]
-check_map <- grep("24\\:", dmap$raw_data_col_name, value = T)[1]
+check_dw <- grep("12\\:", names(dw), value = T)[1]
+check_map <- grep("12\\:", dmap$raw_data_col_name, value = T)[1]
+# dmap[var_name == "cnt_age"]
 if(check_dw != check_map) stop("map does not align with questions")
 
 dw <- dw[!is.na(`CP number`)]
@@ -150,7 +153,7 @@ names(dwl) <- snakecase::to_snake_case(names(dwl))
 tables_list <- list()
 for (var in unique(dwl$var_name)) {
   print(var)
-
+  # if (var == "multiple_contacts_adult_work") browser()
   q <- dwl[var_name == var]
   q <- q[!is.na(value)]
   if (sum(unique(q$row_id) != 0) != 0) {
@@ -158,7 +161,7 @@ for (var in unique(dwl$var_name)) {
 
     qd <- dcast(cp_number + date + row_id ~ var_name, data = q, var.value = "value")
     qd <- as.data.table(qd)
-    qd <- qd[!is.na(get(var))]
+    # qd <- qd[!is.na(get(var))]
     tables_list[[var]] <- qd
   }
 }
@@ -198,8 +201,20 @@ n_individual_contacts <- nrow(contacts)
 # Process participant data
 # ========================
 
+part_names <- c("CP Number",
+                "Age",
+                "Which of the following describes how you think of yourself?",
+                "urban",
+                "our ethnic group",
+                "our ethnicity",
+                "another ethnic group",
+                "high risk",
+                "medium risk",
+                "how many people live in your household")
 
-part_names <- names(dem)[1:12][-c(2,6)]
+# part_names <- names(dem)[1:12][-c(2,6)]
+part_names <- grep(paste(part_names, collapse = "|"), names(dem), value = T)
+
 part_new_names <- c("cp_number", "part_age", "part_gender", "part_urban_rural",
                     "part_ethic_group", "part_ethicity", "part_ethnicity_other",
                     "part_high_risk", "part_medium_risk", "hh_size")
@@ -237,11 +252,12 @@ pdwl <- dwl[row_id == 0]
 ptables_list <- list()
 for (var in unique(pdwl$var_name)) {
   # browser()
+  # if (var == "multiple_contacts_adult_work") browser()
 
   q <- pdwl[var_name == var]
   if (sum(unique(q$row_id) != 0) == 0 & !var %in% c("ID", "date")) {
     print(var)
-    ns <- c(ns, var)
+    # ns <- c(ns, var)
     qd <- dcast(cp_number + date + row_id ~ var_name, data = q, var.value = "value")
     qd <- as.data.table(qd)
     qd <- qd[!is.na(get(var))]
@@ -267,7 +283,7 @@ mult_contacts <- melt(m_dt,
                       measure.vars = mult_contacts_cols,
                       id_cols = id_cols)
 
-mult_contacts[, week := 2]
+mult_contacts[, week := week]
 
 mult_contacts[is.na(value), value := 0]
 total_mult_contacts <- sum(as.numeric(mult_contacts$value))
@@ -371,9 +387,19 @@ if(max(part$n_cnt_mass_reported) == 0 | is.na(max(part$n_cnt_mass_reported))) {
 if (nrow(dw) != nrow(part)) stop("Check participant data")
 summary(part$n_cnt_all)
 
-if (nrow(contacts) != (n_individual_contacts)) {
+if (nrow(contacts) == (n_individual_contacts)) {
   stop("Multiple contacts not added")
 }
+
+table(contacts_final$individually_reported, useNA = "always")
+table(contacts_final$row_id, useNA = "always")
+
+t1 <- contacts_final[individually_reported == 1, .(cnt_n_f = .N), by = "part_id"]
+
+t2 <- contactsr[individually_reported == 1, .(cnt_n_r = .N), by = "part_id"]
+t <- merge(t1, t2, by = "part_id")
+t[,m := cnt_n_r - cnt_n_f]
+View(t)
 # ============================
 # ============================
 # Save data to clean data path

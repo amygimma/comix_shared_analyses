@@ -1,30 +1,24 @@
 ## dm_data_clean
 library(data.table)
 
+data_path <- "data"
+if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
+
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_f"
-  wave_ <- "wave_3"
+  panel_ <- "panel_e"
+  wave_ <- "wave_4"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
 
-# survey <-
-#   readRDS(file.path("data", country_code_, panel_, wave_, "survey_data.rds"))
-# table(survey$Panel, survey$Wave, survey$Qcountry)
+survey <-
+  readRDS(file.path(data_path, country_code_, panel_, wave_, "survey_data.rds"))
+table(survey$Panel, survey$Wave, survey$Qcountry)
 
 
-source("r/V2_data_cleaning/dm_split_survey.R")
 table(full_survey$Sampletype)
-survey <- child_survey
-# panel_ <- "panel_fc"
-# survey <- adult_survey
-# panel_ <- "panel_e"
-
-# survey <- child_survey
-# panel_ <- "panel_ec"
-
 
 table(survey$Wave, survey$Panel)
 table(survey$Sampletype)
@@ -34,15 +28,18 @@ table(survey$survey_type)
 dt_ <- process_data(survey)
 
 table(dt_$table_row)
+dto <- dt_
+
+# Handles hhm who are added week to week (the row ids change week to week),
+# assigns value of over 999, original hhm are under 20
+# non-hhm contacts start at 20, to remain consistent with past data structure
+dt_[table_row > 19 & table_row < 900, table_row := table_row + 999]
+
 
 dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
 
 table(dt_$table_row)
-
-dt_[, table_row :=
-      ifelse(table_row >= 150 & table_row <= 170, table_row - 150 + 1000, table_row)]
 dt_[is.na(table_row)]$table_row
-
 
 table(dt_$qcountry)
 
@@ -69,7 +66,7 @@ if (is.null(dt_$hhcomp_remove)) {
 }
 
 # on children's survey, table_row 999 is the responder, and would be counted twice
-n_contacts_check <- sum((dt_$table_row < 999 & dt_$table_row > 19) |
+n_contacts_check <- sum((dt_$table_row < 999 & dt_$table_row >= 19) |
                           dt_$q62 == "Yes", na.rm = TRUE)
 
 print(paste("Participants:", n_participants_check))
@@ -455,6 +452,7 @@ part <- add_n_cnts_location_cols(part, contacts)
 contacts[, cnt_nickname_masked := as.character(cnt_nickname_masked)]
 
 data_path <- "data"
+if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
 panel_name <- tolower(gsub(" ", "_", as.character(dt$panel[1])))
 wave_name <- tolower(gsub(" ", "_", as.character(dt$wave[1])))
 country_code <- tolower(dt$country_code[1])

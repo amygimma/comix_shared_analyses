@@ -5,17 +5,27 @@ library(data.table)
 ## Update to the latest data and then savem
 ##
 
+# OPTIONAL USER SETUP
+source("r/user_setup.R")
+spss_path <- file.path("data", "raw_data")
+if (!is.null(USER_SPSS_PATH)) spss_path <- USER_SPSS_PATH
 
-panel_path <- c("panel_a", "panel_e", "panel_f")[3]
-spss_country_path <- c("nl_be", "no", "uk")[3]
-path <- file.path("data", "raw_data", spss_country_path, panel_path)
-spss_files <- list.files(path)
-spss_files
+if (CLEANING_SCRIPT) {
+  spss_data_path <- file.path(spss_path, country_code_, panel_)
+  spss_files <- list.files(spss_data_path)
+  spss_file <- grep(paste0(spss_ref_,".*sav"), spss_files, value = TRUE)
+  spss_file <- file.path(spss_data_path, spss_file)
+} else {
+  panel_ <- c("panel_a", "panel_e", "panel_f")[2]
+  country_code_ <- c("nl_be", "no", "uk")[3]
 
-# Change index here
-spss_file <- spss_files[1]
-
-spss_file <- file.path(path, spss_file)
+  path <- file.path(spss_path, country_code_, panel_)
+  spss_files <- list.files(path)
+  spss_files
+  # Change index here
+  spss_file <- spss_files[6]
+  spss_file <- file.path(path, spss_file)
+}
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
 
 df <- read.spss(spss_file)
@@ -30,7 +40,7 @@ if (grepl("PFW1", spss_file)) dt[, Wave := "Wave 1"]
 # if (grepl("PEW3", spss_file)) dt[, Panel := "Panel E"]
 
 data_path <- "data"
-
+if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
 
 #Sometimes needed for early waves
 if (!"uk" %in% spss_country_path) dt$Panel <- "Panel A"

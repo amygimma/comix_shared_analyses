@@ -1,4 +1,8 @@
-rm(list=ls())
+if(exists("REMOVE_LS")){
+  if (REMOVE_LS) {
+    rm(list=ls())
+  }
+}
 library(here)
 library(data.table)
 here::here()

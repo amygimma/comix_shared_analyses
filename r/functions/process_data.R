@@ -110,7 +110,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
         ## Assign current_q to object table_q
         assign(paste0("table_",q), current_q)
 
-        message("loop")
+        message(paste("loop:", q))
 
       } else {
         message(paste0("table for ", q, " is empty"))
@@ -272,6 +272,9 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   resp[,table_row := 0L]
 
   combine_dtr <- merge(combine_dt, resp, by = match_vars, all = T)
+
+  # empty_cols <- colSums(!is.na(df)) > 0
+  # df <- df[, empty_cols, drop = FALSE]
 
   x_dt <- merge(df, combine_dtr, by = c(match_vars), all = TRUE)
 

@@ -20,7 +20,7 @@ panel_details <- c(NA, "cap_100", "trim_100", "trim_50", "ind_reported")[3]
 if (length(panel_details) > 1) stop("Choose one option for panel_details")
 
 # Default of NA is 2000
-nboots <- c("boots_10", "boots_100", "boots_250", "boots_500")[2]
+nboots <- c("boots_10", "boots_100", "boots_250", "boots_500")[1]
 TEST <- FALSE
 
 settings <- c(panel_, panel_details, nboots)
@@ -34,7 +34,7 @@ filter_type <- c("wave_id", "week", "wave_IDS")[3]
 
 
 # Used only when filter_type set to wave_IDS (capitalized to make distinct)
-wave_ids <- c("A 2")
+wave_ids <- c("A 1")
 
 # Week number 1 - 16 (only used if filtering by week)
 # weeks_ <- c(12)
@@ -93,12 +93,12 @@ comix_matrices_path <- matrices_path
 panel_name <- panel_
 
 # wave_p <- "data/raw_data/sc/panel_a/wave_2/"
-part <- readRDS(file.path(data_path, "clean_participants.rds"))
-contacts <- readRDS(file.path(data_path, "clean_contacts.rds"))
+part <- readRDS(file.path(data_path, "panel_a", "wave_1", "clean_participants.rds"))
+contacts <- readRDS(file.path(data_path,  "panel_a", "wave_1", "clean_contacts.rds"))
 
 part <- as.data.table(part)
 contacts <- as.data.table(contacts)
-# contacts[, individually_reported := 1]
+table(contacts$individually_reported)
 contacts[, date := (as.Date(as.character(date)) - 1)]
 contacts[, weekday := weekdays(date)]
 

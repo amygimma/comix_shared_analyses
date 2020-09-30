@@ -1,17 +1,27 @@
 # Setup paths for analyses
+# source("r/user_setup.R")
 
 panel_path <- paste("panel", tolower(panel_name), sep = "_")
 if(TEST) { panel_path <- paste(panel_path, "test", sep = "_")}
 wave_path <- paste("wave", wave_name, sep = "_")
 survey_sub_path <- file.path(country_code_path, panel_path, wave_path)
 
-base_data_path <- here("data")
+if (!exists("USER_DATA_PATH")) {
+  base_data_path <- here("data")
+} else {
+  base_data_path <- USER_DATA_PATH
+}
+
+if (!exists("USER_OUTPUTS_PATH")) {
+  base_outputs_path <- here("outputs")
+} else {
+  base_outputs_path <- USER_OUTPUTS_PATH
+}
+
 
 if(!dir.exists(sprintf("%s/outputs", here()))){
   dir.create(sprintf("%s/outputs", here()))
 }
-
-base_outputs_path <- here("outputs")
 
 data_path <- file.path(base_data_path, country_code_path)
 

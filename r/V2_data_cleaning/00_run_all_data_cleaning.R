@@ -1,14 +1,44 @@
-### Run data cleaning
-library(here)
+library(data.table)
 
-clean_path <- here("r", "00_data_cleaning")
+if(file.exists("r/user_setup.R")) source("r/user_setup.R")
+data_path <- "data"
+if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
 
+
+waves_list <- list(
+  # list(panel_ = "panel_e", wave_ = "wave_1", spss_ref = "PEW1"),
+  # list(panel_ = "panel_e", wave_ = "wave_2", spss_ref = "PEW2"),
+  # list(panel_ = "panel_e", wave_ = "wave_3", spss_ref = "PEW3"),
+  list(panel_ = "panel_e", wave_ = "wave_4", spss_ref_ = "PEW4")#,
+
+  # list(panel_ = "panel_f", wave_ = "wave_1", spss_ref = "PFW1"),
+  # list(panel_ = "panel_f", wave_ = "wave_2", spss_ref = "PFW2"),
+  # list(panel_ = "panel_f", wave_ = "wave_3", spss_ref = "PFW3")
+)
+
+scripts_path <- file.path("r", "V2_data_cleaning")
 country_code_ <- "uk"
-panel_ <- "panel_e"
-wave_ <- "wave_1"
-source(file.path(clean_path, "dm02_data_clean.R"))
+CLEANING_SCRIPT <- TRUE
+for (wave_list in waves_list) {
+  # wave_list <- waves_list[[1]]
+  panel_ <- wave_list$panel_
+  wave_ <- wave_list$wave_
+  spss_ref_ <- wave_list$spss_ref_
+  source(file.path(scripts_path, "dm01_rename_spss.R"))
+  source(file.path(scripts_path, "dm_split_survey.R"))
 
-source(file.path(clean_path, "dm04_combine_survey_files.R"))
+  #Clean adult data
+  panel_ <- wave_list$panel_
+  source(file.path(scripts_path, "dm02_data_clean.R"))
+
+  # Clean child data
+  panel_ <- paste0(panel_, "c")
+  source(file.path(scripts_path, "dm02_data_clean.R"))
+}
+
+
+# source(file.path(clean_path, "dm04_combine_survey_files.R"))
+CLEANING_SCRIPT <- FALSE
 
 
 ## Add POLYMOD

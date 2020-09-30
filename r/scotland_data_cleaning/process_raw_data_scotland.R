@@ -280,7 +280,8 @@ summary(ptrim$n_cnt_individually_reported)
 summary(part$n_cnt_mass_reported)
 summary(ptrim$n_cnt_mass_reported)
 
-write.csv(contacts, "data/raw_data/sc/panel_a/wave_1/clean_contacts.csv")
-saveRDS(contacts, "data/raw_data/sc/panel_a/wave_1/clean_contacts.rds")
-saveRDS(contacts, "data/sc/clean_contacts.rds")
+dir.create("data/sc/panel_a/wave_1/")
+write.csv(contacts, "data/sc/panel_a/wave_1/clean_contacts.csv")
+saveRDS(part, "data/sc/panel_a/wave_1/clean_participants.rds")
+saveRDS(contacts, "data/sc/panel_a/wave_1/clean_contacts.rds")
 
