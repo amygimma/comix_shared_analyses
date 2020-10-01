@@ -424,7 +424,15 @@ add_week_number <- function(dt) {
                       wave_id == "E 2", 22,
                       wave_id == "EC 2", 22,
                       wave_id == "F 2", 23,
-                      wave_id == "FC 2", 23
+                      wave_id == "FC 2", 23,
+                      wave_id == "E 3", 24,
+                      wave_id == "EC 3", 24,
+                      wave_id == "F 3", 25,
+                      wave_id == "FC 3", 25,
+                      wave_id == "E 4", 26,
+                      wave_id == "EC 4", 26,
+                      wave_id == "F 4", 27,
+                      wave_id == "FC 4", 27
                       )]
   return(dt)
 }

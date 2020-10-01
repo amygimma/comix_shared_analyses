@@ -10,7 +10,7 @@ if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
 # =================
 # =================
 
-
+# OPTIONAL: SAVING TO FILR MAY THROW ERRORS IF CONNECTION IS SLOW, MANUALLY MOVE TO FILR
 SAVE_LOCAL <- TRUE
 
 waves_list <- list(
