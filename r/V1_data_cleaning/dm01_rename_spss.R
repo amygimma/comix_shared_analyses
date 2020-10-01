@@ -7,9 +7,11 @@ library(here)
 ## Update to the latest data and then savem
 ##
 
-if (CLEANING_SCRIPT) {
-  spss_file_id <-
-  spss_data_path <-
+if (exists("spss_ref_")) {
+  spss_data_path <- file.path(spss_path, country_code_, panel_)
+  spss_files <- list.files(spss_data_path)
+  spss_file <- grep(spss_ref_, spss_files, value = TRUE)
+  spss_file <- grep("\\.sav", spss_file, value = TRUE)
 } else {
   spss_country_path <- c("nl_be", "no", "uk")[3]
   path <- file.path(data_path, "raw_data", , spss_country_path)

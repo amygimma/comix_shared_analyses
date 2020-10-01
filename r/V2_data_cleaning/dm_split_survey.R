@@ -5,7 +5,7 @@ library(data.table)
 if(!exists("country_code_")){
   country_code_ <- "uk"
   panel_ <- "panel_e"
-  wave_ <- "wave_4"
+  wave_ <- "wave_1"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
@@ -13,10 +13,10 @@ source('r/functions/utility_functions.R')
 if(file.exists("r/user_setup.R")) source("r/user_setup.R")
 
 data_path <- "data"
-if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
+if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 
 survey <-
-  readRDS(file.path(data_path, country_code_, panel_, wave_, "survey_data.rds"))
+  readRDS(file.path(data_path, country_code_, panel_, wave_, "full_survey_data.rds"))
 table(survey$Panel, survey$Wave, survey$Qcountry)
 names(survey)[duplicated(names(survey))]
 # survey <- as.data.table(survey)
@@ -64,19 +64,20 @@ child_survey[, survey_type := "child"]
 panel_ <- gsub(" ", "_", tolower(adult_survey$Panel[1]))
 wave_ <- gsub(" ", "_", tolower(adult_survey$Wave[1]))
 
-if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
+# if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
 #
 # wd <- getwd()
 # setwd(wd)
 # data_path_partial <- gsub("\\~\\/|\\.\\.\\/", "", data_path)
-dir.create(file.path(data_path, country_code_, panel_, wave_))
+dir.create(file.path(data_path, country_code_, panel_, wave_), showWarnings = F)
 saveRDS(full_survey,
         file.path(data_path, country_code_, panel_, wave_, "original_survey_data.rds"))
 saveRDS(adult_survey,
         file.path(data_path, country_code_, panel_, wave_, "survey_data.rds"))
 
 panel_ <- paste0(panel_, "c")
-dir.create(path = file.path(data_path, country_code_, panel_, wave_))
+dir.create(file.path(data_path, country_code_, panel_, wave_), recursive = T)
+dir.create(path = file.path(data_path, country_code_, panel_, wave_), showWarnings = F)
 saveRDS(child_survey,
         file.path(data_path, country_code_, panel_, wave_, "survey_data.rds"))
 

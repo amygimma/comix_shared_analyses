@@ -3,11 +3,13 @@ raw_data/*
 data/*
 outputs/*
 temp/*
-*/user_setup.R
+r/user_setup.R
 
 # Extra careful to protect data
 *.spss
 *.rds
+*.DS_Store
+
 *.RDATA
 *.Rdata
 *.RData

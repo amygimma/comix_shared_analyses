@@ -2,13 +2,13 @@
 library(data.table)
 
 data_path <- "data"
-if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
+if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_e"
-  wave_ <- "wave_4"
+  panel_ <- "panel_ec"
+  wave_ <- "wave_3"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
@@ -451,8 +451,8 @@ part <- add_n_cnts_location_cols(part, contacts)
 # }
 contacts[, cnt_nickname_masked := as.character(cnt_nickname_masked)]
 
-data_path <- "data"
-if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
+# data_path <- "data"
+# if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
 panel_name <- tolower(gsub(" ", "_", as.character(dt$panel[1])))
 wave_name <- tolower(gsub(" ", "_", as.character(dt$wave[1])))
 country_code <- tolower(dt$country_code[1])
@@ -505,9 +505,16 @@ if (part$survey_type[1] == "child") {
   }
 }
 
-
+message(survey_path)
+if(!file.exists(survey_path)) stop("Date folder not created")
 saveRDS(part, file = file.path(survey_path, "clean_participants.rds"))
+
+message(survey_path)
+if(!file.exists(survey_path)) stop("Date folder not created")
 saveRDS(contacts, file = file.path(survey_path, "clean_contacts.rds"))
+
+message(survey_path)
+if(!file.exists(survey_path)) stop("Date folder not created")
 saveRDS(households, file = file.path(survey_path, "clean_households.rds"))
 
 # Print the survey path to use in r/dm_data_checks.R
