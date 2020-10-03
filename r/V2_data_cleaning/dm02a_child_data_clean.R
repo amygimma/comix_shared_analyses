@@ -14,6 +14,7 @@ part[ , part_age := NA]
 hhm_id_pattern <- "^.*\\{_\\s*|\\s*\\}.*$"
 # Example response: "{#Q21_replace[{_5}]._scale.response.value}", need to isolate id "5"
 part[ , child_hhm_id := as.numeric(gsub(hhm_id_pattern, "", child_part_select_raw))]
+part[child_hhm_id > 19 , child_hhm_id := child_hhm_id + 999]
 # Use hhm_id and child_hhm_idabove to add child's data to the selected child in
 # the household data
 households[, survey_type := NULL]
