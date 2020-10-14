@@ -5,8 +5,13 @@ library(data.table)
 ## Update to the latest data and then savaem
 ##
 
+# OPTIONAL SETUP
+# panel_ <- "panel_f"
+# spss_ref_ <- "PFW4"
+# CLEANING_SCRIPT <- T
+
 # OPTIONAL USER SETUP
-source("r/user_setup.R")
+if (file.exists("r/user_setup.R")) source("r/user_setup.R")
 spss_path <- file.path("data", "raw_data")
 if (!is.null(USER_SPSS_PATH)) spss_path <- USER_SPSS_PATH
 
@@ -31,17 +36,13 @@ if (exists("spss_ref_")) {
 }
 spss_file
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
-
+spss_file
 df <- read.spss(spss_file)
 
 dt <- as.data.table(df)
 ncol(dt)
 nrow(dt)
 
-# Needed when the wave is recorded as "Wave3" instead of "Wave 3"
-# if (grepl("PFW1", spss_file)) dt[, Wave := "Wave 1"]
-# if (grepl("PEW3", spss_file)) dt[, Wave := "Wave 3"]
-# if (grepl("PEW3", spss_file)) dt[, Panel := "Panel E"]
 
 data_path <- "data"
 dir.create(data_path, showWarnings = F)
@@ -51,6 +52,7 @@ if(!is.null(dt$Q_Panel)) {
   setnames(dt, old = c("Q_Panel", "Q_Wave"), new = c("Panel", "Wave"))
 }
 
+# Needed when the wave is recorded as "Wave3" instead of "Wave 3"
 dt[, Wave := as.character(gsub("([a-z])([0-9])", "\\1 \\2", Wave))]
 
 table(dt$Panel, dt$Wave, dt$Qcountry)
@@ -80,11 +82,9 @@ for (country_code in country_codes) {
 
   survey_path <- file.path(survey_path, "full_survey_data.rds")
   saveRDS(dt_country, survey_path)
-
   message(paste("Saved to:", survey_path))
 }
 
 scripts_path <- file.path("r", "V2_data_cleaning")
 message("Splitting survey")
 source(file.path(scripts_path, "dm_split_survey.R"))
-

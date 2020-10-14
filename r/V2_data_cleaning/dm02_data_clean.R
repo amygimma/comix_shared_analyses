@@ -7,8 +7,8 @@ if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_ec"
-  wave_ <- "wave_3"
+  panel_ <- "panel_fc"
+  wave_ <- "wave_4"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
@@ -392,7 +392,7 @@ if (length(mult_contacts_cols) == 0) {
 }
 
 
-
+dt[row_id == 1022 & part_id == 82502]$cnt_age
 
 ### Households
 ###################################
