@@ -3,12 +3,13 @@ library(data.table)
 
 data_path <- "data"
 if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
+data_path <- USER_DATA_PATH
 
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_fc"
-  wave_ <- "wave_4"
+  panel_ <- "panel_ec"
+  wave_ <- "wave_5"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
@@ -456,6 +457,7 @@ contacts[, cnt_nickname_masked := as.character(cnt_nickname_masked)]
 panel_name <- tolower(gsub(" ", "_", as.character(dt$panel[1])))
 wave_name <- tolower(gsub(" ", "_", as.character(dt$wave[1])))
 country_code <- tolower(dt$country_code[1])
+data_path <- "data"
 survey_path <- file.path(data_path, country_code, panel_name, wave_name)
 
 if (!file.exists(survey_path)) {
