@@ -5,7 +5,7 @@ library(data.table)
 if(!exists("country_code_")){
   country_code_ <- "uk"
   panel_ <- "panel_e"
-  wave_ <- "wave_1"
+  wave_ <- "wave_"
 }
 source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')

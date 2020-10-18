@@ -3,21 +3,17 @@ source("r/functions/utility_functions.R")
 
 
 if(file.exists("r/user_setup.R")) source("r/user_setup.R")
-SAVE_LOCAL <- T
+SAVE_LOCAL <- F
 data_path <- "data"
 if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 country_code <- "uk"
-include_panels <- paste(
-  c("panel_e", "panel_f", "panel_ec", "panel_fc"),
-  collapse = "|")
 
 combine_dts <- function(base_file_name, country_code) {
   base_data_path <- file.path(data_path, country_code)
   data_files <- list.files(base_data_path, recursive = TRUE)
   data_paths <- grep(base_file_name, data_files, value = TRUE)
-  data_paths <- grep("panel", data_paths, value = TRUE)
-  # browser()
-  data_paths <- grep(include_panels, data_paths, value = T)
+  data_paths <- grep("panel_e|panel_ec|panel_f|panel_fc", data_paths, value = TRUE)
+
   data_paths <- grep("interim|test|archive|raw_data|adj", data_paths,
                      value = TRUE, invert = TRUE)
 
@@ -29,7 +25,19 @@ combine_dts <- function(base_file_name, country_code) {
   if (length(data_dts) > 1) {
     for(i in 2:length(data_dts)) {
       message(unique(data_dts[[i]]$wave_id))
+      message(i)
       if (class(data_dts[[i]]$phys_contact) == "character") browser()
+
+      if(TRUE) {
+        mult_contacts_cols <- grep("multiple_contacts_", names(data_dts[[i]]), value = TRUE)
+        if(length(mult_contacts_cols) > 0) {
+          data_dts[[i]][, (mult_contacts_cols) :=  lapply(.SD, as.character), .SDcols = mult_contacts_cols]
+        }
+        mult_contacts_cols <- grep("multiple_contacts_", names(combined_data_dt), value = TRUE)
+        if(length(mult_contacts_cols) > 0){
+          combined_data_dt[, (mult_contacts_cols) :=  lapply(.SD, as.character), .SDcols = mult_contacts_cols]
+        }
+      }
 
       by_vars <- intersect(names(combined_data_dt), names(data_dts[[i]]))
       combined_data_dt <- merge(combined_data_dt, data_dts[[i]],
@@ -64,12 +72,12 @@ ncol(hh_dt)
 
 part_dt <- add_n_cnts_location_cols(part_dt, cont_dt, replace_existing_cols = TRUE)
 
-dir.create(file.path("data", country_code, "panels_e_f"))
+# dir.create(file.path("data", country_code, "panels_e_f"))
 saveRDS(part_dt,
-        file.path("data", country_code, "panels_e_f", part_base_file))
+        file.path(data_path, country_code, "panels_e_f", part_base_file))
 saveRDS(cont_dt,
-        file.path("data", country_code, "panels_e_f", cont_base_file))
+        file.path(data_path, country_code, "panels_e_f", cont_base_file))
 saveRDS(hh_dt,
-        file.path("data", country_code, "panels_e_f", hh_base_file))
+        file.path(data_path, country_code, "panels_e_f", hh_base_file))
 
 

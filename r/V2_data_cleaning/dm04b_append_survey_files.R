@@ -7,7 +7,7 @@ source("r/user_setup.R")
 base_data_path <- "data"
 if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA_PATH
 panel_paths <- c("Panel E", "Panel EC")
-wave_paths <- c("Wave 4")
+wave_paths <- c("Wave 5")
 
 
 combine_dts <- function(base_file_name, country_code, panels, waves) {
@@ -38,9 +38,9 @@ combine_dts <- function(base_file_name, country_code, panels, waves) {
     for(i in 1:length(data_dts)) {
       # if (grepl("panel_e", data_paths[i])) browser()
       message(data_paths[i])
-
+      # browser()
       if (unique(data_dts[[i]]$panel) %in% unique(combined_data_dt$panel) &
-          unique(data_dts[[i]]$wave) %in% unique(combined_data_dt$wave)){
+          unique(data_dts[[i]]$wave_id) %in% unique(combined_data_dt$wave_id)){
         stop("Data for panel and wave already merged, new data file not saved")
       } else {
         mult_contacts_cols <- grep("multiple_contacts_", names(data_dts[[i]]), value = TRUE)
@@ -95,12 +95,12 @@ for (country_code in country_codes) {
   ncol(hh_dt)
 
   part_dt <- add_n_cnts_location_cols(part_dt, cont_dt, replace_existing_cols = TRUE)
-  # saveRDS(part_dt,
-  #         file.path(base_data_path, country_code, part_base_file))
-  # saveRDS(cont_dt,
-  #         file.path(base_data_path, country_code, cont_base_file))
-  # saveRDS(hh_dt,
-  #         file.path(base_data_path, country_code, hh_base_file))
+  saveRDS(part_dt,
+          file.path(base_data_path, country_code, part_base_file))
+  saveRDS(cont_dt,
+          file.path(base_data_path, country_code, cont_base_file))
+  saveRDS(hh_dt,
+          file.path(base_data_path, country_code, hh_base_file))
 }
 
-source("r/change_R2/regional/00_setup_regions.R")
+source("r/r_estimates/regional/00_setup_regions.R")
