@@ -19,7 +19,7 @@ survey <-
 table(survey$Panel, survey$Wave, survey$Qcountry)
 
 
-table(full_survey$Sampletype)
+# table(full_survey$Sampletype)
 
 table(survey$Wave, survey$Panel)
 table(survey$Sampletype)
@@ -475,6 +475,11 @@ if (!file.exists(survey_path)) {
 
 print(paste(panel_, wave_, "cleaned"))
 if (part$survey_type[1] == "adult") {
+  v2p <- c("Panel E", "Panel F")
+  if (part$panel[1] %in% v2p & unique(part$sample_type) != "Sampletype=1 Main sample") {
+    # Only panels E and F are sent with adults and children combined
+    stop("Error: Sampletype=2 detected in adult survey - remove to proceed")
+  }
   if(n_participants_check != nrow(part)){
     stop("Check total number of participant rows")
   }
@@ -490,6 +495,11 @@ if (part$survey_type[1] == "adult") {
 }
 
 if (part$survey_type[1] == "child") {
+  v2p <- c("Panel EC", "Panel FC")
+  if (part$panel[1] %in% v2p & unique(part$sample_type) !=  "Sampletype=2 Parent sample") {
+    # Only panels E and F are sent with adults and children combined
+    stop("Error: Sampletype=1 detected in child survey - remove to proceed")
+  }
   if(n_participants_check != nrow(part)){
     stop("Check total number of participant rows")
   }
@@ -511,12 +521,8 @@ message(survey_path)
 if(!file.exists(survey_path)) stop("Date folder not created")
 saveRDS(part, file = file.path(survey_path, "clean_participants.rds"))
 
-message(survey_path)
-if(!file.exists(survey_path)) stop("Date folder not created")
 saveRDS(contacts, file = file.path(survey_path, "clean_contacts.rds"))
 
-message(survey_path)
-if(!file.exists(survey_path)) stop("Date folder not created")
 saveRDS(households, file = file.path(survey_path, "clean_households.rds"))
 
 # Print the survey path to use in r/dm_data_checks.R
