@@ -1,7 +1,7 @@
 ## Combine survey files
 library(data.table)
 source("r/functions/utility_functions.R")
-source("r/user_setup.R")
+# source("r/user_setup.R")
 
 # Participant
 
@@ -38,6 +38,8 @@ combine_dts <- function(base_file_name, country_code) {
         }
 
       by_vars <- intersect(names(combined_data_dt), names(data_dts[[i]]))
+
+      # browser()
       combined_data_dt <- merge(combined_data_dt, data_dts[[i]],
                                 by = by_vars, all = TRUE)
     }
@@ -55,7 +57,6 @@ for (country_code in country_codes) {
   part_dt <- combine_dts(part_base_file, country_code)
   table(part_dt$panel, part_dt$wave)
   ncol(part_dt)
-  browser()
   # CONTACTS
   #
   cont_base_file <- "clean_contacts.rds"
@@ -74,10 +75,9 @@ for (country_code in country_codes) {
   part_dt <- add_n_cnts_location_cols(part_dt, cont_dt, replace_existing_cols = TRUE)
 
   message("saving data...")
-  browser()
 
   data_path <- "data"
-  data_path <- USER_DATA_PATH
+  # data_path <- USER_DATA_PATH
   saveRDS(part_dt,
           file.path(data_path, country_code, "panels_a_d", part_base_file))
   saveRDS(cont_dt,

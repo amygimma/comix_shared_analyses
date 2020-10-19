@@ -5,8 +5,8 @@ source("r/user_setup.R")
 
 # SETUP
 base_data_path <- "data"
-if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA_PATH
-panel_paths <- c("Panel E", "Panel EC")
+# if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA'l\;''\;ll\\_PATH
+panel_paths <- c("Panel F", "Panel FC")
 wave_paths <- c("Wave 5")
 
 
@@ -36,7 +36,6 @@ combine_dts <- function(base_file_name, country_code, panels, waves) {
   combined_data_dt <- readRDS(file.path(base_data_file_path))
   if (length(data_dts) > 0) {
     for(i in 1:length(data_dts)) {
-      # if (grepl("panel_e", data_paths[i])) browser()
       message(data_paths[i])
       # browser()
       if (unique(data_dts[[i]]$panel) %in% unique(combined_data_dt$panel) &

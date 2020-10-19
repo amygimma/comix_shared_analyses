@@ -1,7 +1,7 @@
 library(data.table)
 source("r/user_setup.R")
 data_path <- "data"
-data_path <- USER_DATA
+# data_path <- USER_DATA
 
 
 pad <- readRDS(file.path(data_path, "uk", "panels_a_d", "clean_participants.rds"))
@@ -20,7 +20,7 @@ pall <- rbind(pad, pef, fill = T)
 table(pall$wave, pall$panel)
 
 cntall <- rbind(cad, cef, fill = T)
-table(cntall$wave, cnall$panel)
+table(cntall$wave, cntall$panel)
 
 saveRDS(pall, "data/uk/clean_participants.rds")
 saveRDS(pall, file.path(data_path, "uk/clean_participants.rds"))

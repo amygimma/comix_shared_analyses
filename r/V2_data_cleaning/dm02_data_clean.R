@@ -2,13 +2,13 @@
 library(data.table)
 
 data_path <- "data"
-if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
-data_path <- USER_DATA_PATH
+# if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
+# data_path <- USER_DATA_PATH
 
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "uk"
-  panel_ <- "panel_ec"
+  panel_ <- "panel_f"
   wave_ <- "wave_5"
 }
 source('r/functions/process_data.R')
@@ -151,8 +151,9 @@ dt[, date := survey_date - 1]
 part_dates <- dt[row_id == 0, list(part_id, date)]
 dt[,date := NULL]
 dt <- merge(dt, part_dates, by = "part_id")
-dt[, weekday := weekdays(date - 1)]
-dt[, survey_weekday := weekdays(date)]
+dt[, survey_weekday := weekdays(survey_date)]
+dt[, weekday := weekdays(date)]
+
 
 
 

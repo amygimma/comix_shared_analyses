@@ -6,15 +6,17 @@ library(data.table)
 ##
 
 # OPTIONAL SETUP
-country_code_ <- "uk"
-panel_ <- "panel_e"
-spss_ref_ <- "PEW5"
-CLEANING_SCRIPT <- T
+if(!CLEANING_SCRIPT & !exists(spss_ref_)) {
+  country_code_ <- "uk"
+  panel_ <- "panel_f"
+  spss_ref_ <- "PFW5"
+  SAVE_LOCAL <- T
+}
 
-# OPTIONAL USER SETUP
-if (file.exists("r/user_setup.R")) source("r/user_setup.R")
+
+# if (file.exists("r/user_setup.R")) source("r/user_setup.R")
 spss_path <- file.path("data", "raw_data")
-# if (!is.null(USER_SPSS_PATH)) spss_path <- USER_SPSS_PATH
+if (!is.null(USER_SPSS_PATH)) spss_path <- USER_SPSS_PATH
 
 if (exists("spss_ref_")) {
   spss_data_path <- file.path(spss_path, country_code_, panel_)
@@ -35,7 +37,6 @@ if (exists("spss_ref_")) {
   spss_file <- spss_files[6]
   spss_file <- file.path(path, spss_file)
 }
-spss_file
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
 spss_file
 df <- read.spss(spss_file)

@@ -14,13 +14,14 @@ if (exists("spss_ref_")) {
   spss_file <- grep("\\.sav", spss_file, value = TRUE)
 } else {
   spss_country_path <- c("nl_be", "no", "uk")[3]
-  path <- file.path(data_path, "raw_data", , spss_country_path)
-  spss_files <- list.files(path)
+  path <- file.path(data_path, "raw_data", spss_country_path)
+  spss_files <- list.files(path, recursive = T)
   spss_files
   # Change index here
-  spss_file <- spss_files[7]
+  spss_file <- spss_files[1]
 
-  spss_file <- here(path, spss_file)
+  spss_file <- file.path(path, spss_file)
+  file.exists(spss_file)
 }
 
 
