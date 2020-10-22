@@ -13,6 +13,15 @@ spss_to_date <- function(x) {
   return(x)
 }
 
+match_variable <- function(row_values, part_id_, dt, var_name) {
+  v <- dt[part_id == part_id_, get(var_name)]
+  if (length(v) > 0) {
+    return(v)
+  } else {
+    return(NA)
+  }
+}
+
 ## AGE
 
 age_bins <- c(0,1,5*(1:14))
@@ -436,7 +445,11 @@ add_week_number <- function(dt) {
                       wave_id == "E 5", 28,
                       wave_id == "EC 5", 28,
                       wave_id == "E 5", 29,
-                      wave_id == "EC 5", 29
+                      wave_id == "EC 5", 29,
+                      wave_id == "F 5", 30,
+                      wave_id == "FC 5", 30,
+                      wave_id == "E 6", 31,
+                      wave_id == "EC 6", 31
 
                       )]
 

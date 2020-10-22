@@ -18,16 +18,22 @@ waves_list <- list(
   list(panel_ = "panel_e", wave_ = "wave_2", spss_ref_ = "PEW2"),
   list(panel_ = "panel_e", wave_ = "wave_3", spss_ref_ = "PEW3"),
   list(panel_ = "panel_e", wave_ = "wave_4", spss_ref_ = "PEW4"),
+  list(panel_ = "panel_e", wave_ = "wave_5", spss_ref_ = "PEW5"),
+
 
   list(panel_ = "panel_f", wave_ = "wave_1", spss_ref_ = "PFW1"),
   list(panel_ = "panel_f", wave_ = "wave_2", spss_ref_ = "PFW2"),
-  list(panel_ = "panel_f", wave_ = "wave_3", spss_ref_ = "PFW3")
+  list(panel_ = "panel_f", wave_ = "wave_3", spss_ref_ = "PFW3"),
+  list(panel_ = "panel_f", wave_ = "wave_4", spss_ref_ = "PFW4"),
+  list(panel_ = "panel_f", wave_ = "wave_5", spss_ref_ = "PFW5")
 )
 
 scripts_path <- file.path("r", "V2_data_cleaning")
 country_code_ <- "uk"
+CLEANING_SCRIPT <- T
+SAVE_LOCAL <- T
 for (wave_list in waves_list) {
-  # wave_list <- waves_list[[1]]
+
   panel_ <- wave_list$panel_
   wave_ <- wave_list$wave_
   spss_ref_ <- wave_list$spss_ref_
@@ -46,6 +52,5 @@ for (wave_list in waves_list) {
 }
 
 source(file.path("r", "V2_data_cleaning", "dm04_combine_survey_files.R"))
-SAVE_LOCAL <- FALSE
 
 

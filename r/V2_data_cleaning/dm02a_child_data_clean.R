@@ -4,8 +4,8 @@ message("Cleaning children's data")
 
 part[, survey_type := "child"]
 # Move particpant data to responder columns
-setnames(part, old = c("part_age_group", "part_gender", "part_gender_nb"),
-         new = c("resp_age_group", "resp_gender", "resp_gender_nb"))
+setnames(part, old = c("part_age", "part_age_group", "part_gender", "part_gender_nb"),
+         new = c("resp_age", "resp_age_group", "resp_gender", "resp_gender_nb"))
 # Remove exact age from participant data ()
 part[ , part_age := NA]
 
@@ -60,22 +60,67 @@ part[, cnt_age := fcase(
 part[, cnt_gender_nb := cnt_gender]
 
 
-# Remove particpant hmm_id == 0 in favor of hhm_id == 999 with contact info (see main data cleaning file)
-# households <- households[hhm_id != 0]
-
 # Add participant to contacts if appropriate
-# parent_cnts <- dt[row_id == 0 & hhm_contact_yn == "Yes"]
-# parent_cnts[,cont_id := paste0(part_id ,"-", row_id, "-", week)]
-# #
-# contacts <- merge(contacts, parent_cnts, by = names(contacts))
+parent_cnts <- dt[row_id == 0]
+cnt_adult_age_bins <- c(18, 20, seq(25, 100, 10))
+parent_cnts[ , part_age_group := cut(part_age,
+                           breaks = cnt_adult_age_bins,
+                           right = FALSE)]
+table(parent_cnts$part_age_group, useNA = "always")
+parent_cnts[, part_age_group := gsub("\\[|\\)", "", part_age_group)]
+parent_cnts[part_age_group != "70,120", part_age_group := paste(
+  tstrsplit(part_age_group, ",", "-")[[1]],
+  as.numeric(tstrsplit(part_age_group, ",", "-")[[2]]) -1,
+  sep = "-")]
+parent_cnts[part_age_group == "70,120", part_age_group := "70-120"]
+table(parent_cnts$part_age_group, useNA = "always")
+# match_hhm_id <-
+# contacts[hhm_id == 0, cnt_age := 1]
+contacts[hhm_id == 0, cnt_age :=
+             match_variable(.SD, part_id, parent_cnts, "part_age_group"), by = "part_id"]
+table(contacts[hhm_id == 0]$cnt_age, useNA = "always")
+contacts[hhm_id == 0, cnt_gender :=
+             match_variable(.SD, part_id, parent_cnts, "part_gender"), by = "part_id"]
+contacts[hhm_id == 0, cont_id := paste0(part_id ,"-", 999, "-", week)]
+contacts <- contacts[hhm_id == 0, hhm_id := 999]
 
+table(contacts[hhm_id == 999]$cnt_age)
+# Add participant to contacts (assigned to hhm_id 999 to follow original ipsos structure)
 
+if(nrow(contacts[hhm_id == 999]) > 0){
+  if (any(is.na(contacts[hhm_id == 999]$cnt_age))) stop("Parent ages not included in contacts")
+  if (any(is.na(contacts[hhm_id == 999]$cnt_gender))) stop("Parent genders not included in contacts")
+} else{
+  stop("Check contact table for parent contacts")
+}
 
+# Add participant to households (assigned to hhm_id 999 to follow original ipsos structure)
+households[hhm_id == 0, hhm_age :=
+             match_variable(.SD, part_id, parent_cnts, "part_age_group"), by = "part_id"]
+households[hhm_id == 0, hhm_gender :=
+             match_variable(.SD, part_id, parent_cnts, "part_gender"), by = "part_id"]
+table(households[hhm_id == 0]$hhm_age, useNA = "always")
+households[hhm_id == 0, cont_id := paste0(part_id ,"-", 999, "-", week)]
+households <- households[hhm_id == 0, hhm_id := 999]
+
+if(nrow(households[hhm_id == 999]) > 0){
+  if (any(is.na(households[hhm_id == 999]$hhm_age))) stop("Parent ages not included in contacts")
+  if (any(is.na(households[hhm_id == 999]$hhm_gender))) stop("Parent genders not included in contacts")
+} else{
+  stop("Check household table for parent contacts")
+}
+
+# Set names of child contact demographics to participating child participant demographics
 setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender", "cnt_gender_nb"),
          new = c("part_age_group", "part_age_est_max", "part_age_est_min", "part_gender", "part_gender_nb"))
+
+hhm_child <- households[child_participant == T]
+part[, part_student := match_variable(.DS, part_id, hhm_child, "hhm_student")]
+
 
 table(part$part_age_group, useNA = "always")
 table(part$part_age_est_max, useNA = "always")
 table(part$part_gender, useNA = "always")
 table(part$part_gender_nb, useNA = "always")
+table(part$part_student, useNA = "always")
 
