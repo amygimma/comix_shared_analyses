@@ -13,6 +13,15 @@ spss_to_date <- function(x) {
   return(x)
 }
 
+match_variable <- function(row_values, part_id_, dt, var_name) {
+  v <- dt[part_id == part_id_, get(var_name)]
+  if (length(v) > 0) {
+    return(v)
+  } else {
+    return(NA)
+  }
+}
+
 ## AGE
 
 age_bins <- c(0,1,5*(1:14))
