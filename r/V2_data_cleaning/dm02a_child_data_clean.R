@@ -80,7 +80,7 @@ contacts[hhm_id == 0, cnt_age :=
              match_variable(.SD, part_id, parent_cnts, "part_age_group"), by = "part_id"]
 table(contacts[hhm_id == 0]$cnt_age, useNA = "always")
 contacts[hhm_id == 0, cnt_gender :=
-             match_variable(.SD, part_id, parent_cnts, "part_gender"), by = "part_id"]
+             match_variable(.SD, part_id, parent_cnts, "part_gender_nb"), by = "part_id"]
 contacts[hhm_id == 0, cont_id := paste0(part_id ,"-", 999, "-", week)]
 contacts <- contacts[hhm_id == 0, hhm_id := 999]
 
@@ -98,16 +98,16 @@ if(nrow(contacts[hhm_id == 999]) > 0){
 households[hhm_id == 0, hhm_age :=
              match_variable(.SD, part_id, parent_cnts, "part_age_group"), by = "part_id"]
 households[hhm_id == 0, hhm_gender :=
-             match_variable(.SD, part_id, parent_cnts, "part_gender"), by = "part_id"]
-table(households[hhm_id == 0]$hhm_age, useNA = "always")
+             match_variable(.SD, part_id, parent_cnts, "part_gender_nb"), by = "part_id"]
+table(households[hhm_id == 0]$hhm_gender, useNA = "always")
 households[hhm_id == 0, cont_id := paste0(part_id ,"-", 999, "-", week)]
 households <- households[hhm_id == 0, hhm_id := 999]
 
 if(nrow(households[hhm_id == 999]) > 0){
-  if (any(is.na(households[hhm_id == 999]$hhm_age))) stop("Parent ages not included in contacts")
-  if (any(is.na(households[hhm_id == 999]$hhm_gender))) stop("Parent genders not included in contacts")
+  if (any(is.na(households[hhm_id == 999]$hhm_age))) stop("Parent ages not included in hh dt")
+  if (any(is.na(households[hhm_id == 999]$hhm_gender))) stop("Parent genders not included in hh dt")
 } else{
-  stop("Check household table for parent contacts")
+  stop("Check household table for parent demographic data")
 }
 
 # Set names of child contact demographics to participating child participant demographics
