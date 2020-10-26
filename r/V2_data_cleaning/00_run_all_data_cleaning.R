@@ -19,6 +19,8 @@ waves_list <- list(
   list(panel_ = "panel_e", wave_ = "wave_3", spss_ref_ = "PEW3"),
   list(panel_ = "panel_e", wave_ = "wave_4", spss_ref_ = "PEW4"),
   list(panel_ = "panel_e", wave_ = "wave_5", spss_ref_ = "PEW5"),
+  list(panel_ = "panel_e", wave_ = "wave_6", spss_ref_ = "PEW6"),
+
 
 
   list(panel_ = "panel_f", wave_ = "wave_1", spss_ref_ = "PFW1"),
