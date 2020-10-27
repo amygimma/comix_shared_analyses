@@ -358,6 +358,8 @@ part_vars <- names(part)[grep(vars_remove, names(part), invert = TRUE)]
 part_vars <- union(part_vars, keep)
 
 part <- part[, part_vars, with = FALSE]
+part[, part_social_group := gsub("  ", " ", part_social_group)]
+
 
 names(part) <- gsub("hhm_", "part_", names(part))
 

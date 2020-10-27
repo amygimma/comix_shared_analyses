@@ -11,7 +11,7 @@ if(!exists("country_code_")){
   panel_ <- "panel_fc"
   wave_ <- "wave_5"
 }
-source('r/functions/process_data.R')
+source('r/functions/V2_process_data.R')
 source('r/functions/utility_functions.R')
 
 survey <-
@@ -76,13 +76,6 @@ print(paste("Contacts:", n_contacts_check))
 
 ## Check variables names
 varnames <- as.data.table(read.csv("codebook/var_names_v2.csv"))
-# dt_names <- data.table(varnames_v2 = unique(grep("_loop_", names(dt_) ,invert = T, value = T)))
-# dt_names <- data.table(varnames_v2 = unique(gsub("_[0-9]+_","_XX_", names(dt_))))
-
-# nrow(dt_names)
-# varnames1 <- merge(varnames, dt_names, by.x = "var", by.y = "varnames_v2", all = T)
-# varnames1 <- fwrite(varnames1, "codebook/var_names_new.csv")
-
 
 change_names <- function(df, varnames, c_code) {
   loops <- grep("loop|contact[1-100]|contact[900-998]|hhcompremove_[0-9]|hhcompadd_[0-9]|_i$", names(df), value = T)
@@ -300,6 +293,7 @@ part_vars <- names(part)[grep(vars_remove, names(part), invert = TRUE)]
 part_vars <- union(part_vars, keep)
 
 part <- part[, part_vars, with = FALSE]
+part[, part_social_group := gsub("  ", " ", part_social_group)]
 
 names(part) <- gsub("hhm_", "part_", names(part))
 
