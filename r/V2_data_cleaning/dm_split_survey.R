@@ -1,4 +1,3 @@
-## dm_data_clean
 library(data.table)
 
 ## Change object here for manual cleaning
@@ -7,7 +6,6 @@ if(!exists("country_code_")){
   panel_ <- "panel_e"
   wave_ <- "wave_"
 }
-source('r/functions/process_data.R')
 source('r/functions/utility_functions.R')
 
 if(file.exists("r/user_setup.R")) source("r/user_setup.R")
@@ -18,16 +16,8 @@ if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 survey <-
   readRDS(file.path(data_path, country_code_, panel_, wave_, "full_survey_data.rds"))
 table(survey$Panel, survey$Wave, survey$Qcountry)
-names(survey)[duplicated(names(survey))]
-# survey <- as.data.table(survey)
+
 full_survey <- survey
-
-
-# if(unique(as.character(survey$Wave)) == "Wave 1"){
-#   # removes duplicate col
-#   survey[,Wave := NULL]
-#   survey[,Wave := "Wave 1"]
-# }
 
 child_qs <- grep("QP", names(survey), value = T)
 child_cs <- grep("Pcontact", names(survey), value = T)
@@ -37,7 +27,6 @@ adult_qs <- grep("^Q[0-9]+", names(survey), value = T)
 adult_qs <- grep("^Q23|Q20", adult_qs, value = T, invert = T)
 adult_cs <- grep("^contact[0-9]+", names(survey), value = T)
 adult_cols <- c(adult_qs, adult_cs)
-
 
 
 adult_survey <- survey[as.character(Sampletype) == "Sampletype=1 Main sample"]
@@ -57,18 +46,11 @@ names(child_survey) <- new_names_ec
 setnames(child_survey, old = names(child_survey), new = new_names_ec)
 names(child_survey)[duplicated(names(child_survey))] # 0
 child_survey[, survey_type := "child"]
-# child_survey[, Panel := "Panel EC"]
-# child_survey[, Wave := "Wave 2"]
 
 # SAVE RDS FILES
 panel_ <- gsub(" ", "_", tolower(adult_survey$Panel[1]))
 wave_ <- gsub(" ", "_", tolower(adult_survey$Wave[1]))
 
-# if (!is.null(USER_DATA_PATH)) data_path <- USER_DATA_PATH
-#
-# wd <- getwd()
-# setwd(wd)
-# data_path_partial <- gsub("\\~\\/|\\.\\.\\/", "", data_path)
 dir.create(file.path(data_path, country_code_, panel_, wave_), showWarnings = F)
 saveRDS(full_survey,
         file.path(data_path, country_code_, panel_, wave_, "original_survey_data.rds"))
@@ -82,7 +64,7 @@ saveRDS(child_survey,
         file.path(data_path, country_code_, panel_, wave_, "survey_data.rds"))
 
 
-# # Check for errors
+# # Check for errors [Keep for reference]
 
 # grep("QP54", adult_cols, value = T) # 0
 # grep("Q54", adult_cols, value = T) # 1
