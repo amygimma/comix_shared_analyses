@@ -15,7 +15,7 @@ The `r/run_all_uk.R` script runs all cleaning code for survey versions 1 (panels
   
   
 
-## Data Cleaning - Survey Version 1
+## Data Cleaning - Survey Version 2
 1. V2_data_cleaning/dm01_rename_spss.R
   a. calls V2_data_cleaning/dm_split_data.R to separate adult and children's data for processing
 2. V2_data_cleaning/dm02_data_clean.R 
