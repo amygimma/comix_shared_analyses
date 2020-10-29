@@ -12,6 +12,7 @@ if (exists("spss_ref_")) {
   spss_files <- list.files(spss_data_path)
   spss_file <- grep(spss_ref_, spss_files, value = TRUE)
   spss_file <- grep("\\.sav", spss_file, value = TRUE)
+  spss_file <- file.path(spss_data_path, spss_file)
 } else {
   spss_country_path <- c("nl_be", "no", "uk")[3]
   path <- file.path(data_path, "raw_data", spss_country_path)

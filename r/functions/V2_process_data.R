@@ -197,17 +197,20 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   }
 
   # Contact flags
+  # ##########################
+
   contact_flags <- paste0("contact", c(900:max(table_q66$table_row)))
   table_contact_flag <- df[variable %in% contact_flags]
   table_contact_flag <- table_contact_flag[!is.na(value) & value != "0"]
   setnames(table_contact_flag, old = "value", new = "contact_name_flag")
-  # Add 20 to table_row because contact table rows begin here
-  table_contact_flag <-
+
+    table_contact_flag <-
     table_contact_flag[, table_row := as.numeric(sub("contact", "", variable))]
   table(table_contact_flag$table_row)
   table_contact_flag$variable <- NULL
   table_contact_flag[, contact_name_flag := gsub("‘|’", "", contact_name_flag)]
   table(table_contact_flag$table_row)
+
   # CHILD SURVEY TABLES
   # ##########################
 

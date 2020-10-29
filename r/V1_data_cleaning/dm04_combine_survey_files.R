@@ -44,7 +44,6 @@ combine_dts <- function(base_file_name, country_code) {
                                 by = by_vars, all = TRUE)
     }
   }
-  # browser()
 
   return(combined_data_dt)
 }
@@ -52,7 +51,6 @@ combine_dts <- function(base_file_name, country_code) {
 country_codes <- c("uk", "be", "nl", "no", "sc")[c(1)]
 for (country_code in country_codes) {
   # PARTICIPANTS
-  country_codes  <- "uk"
   part_base_file <- "clean_participants.rds"
   part_dt <- combine_dts(part_base_file, country_code)
   table(part_dt$panel, part_dt$wave)
@@ -74,15 +72,19 @@ for (country_code in country_codes) {
 
   part_dt <- add_n_cnts_location_cols(part_dt, cont_dt, replace_existing_cols = TRUE)
 
-  message("saving data...")
 
   data_path <- "data"
   # data_path <- USER_DATA_PATH
-  saveRDS(part_dt,
-          file.path(data_path, country_code, "panels_a_d", part_base_file))
-  saveRDS(cont_dt,
-          file.path(data_path, country_code, "panels_a_d", cont_base_file))
-  saveRDS(hh_dt,
-          file.path(data_path, country_code, "panels_a_d", hh_base_file))
-}
+  if (country_code == "uk") {
+    save_path <- file.path(data_path, country_code, "panels_a_d")
+  } else {
+    save_path <- file.path(data_path, country_code)
+  }
+
+  message(paste("saving data to path:", save_path))
+
+  saveRDS(part_dt, file.path(save_path, "clean_participants.rds"))
+  saveRDS(cont_dt, file.path(save_path, "clean_contacts.rds"))
+  saveRDS(hh_dt, file.path(save_path, "clean_households.rds"))
+  }
 

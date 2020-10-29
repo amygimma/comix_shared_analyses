@@ -3,9 +3,9 @@ library(data.table)
 
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
-  country_code_ <- "be"
+  country_code_ <- "no"
   panel_ <- "panel_a"
-  wave_ <- "wave_8"
+  wave_ <- "wave_4"
 }
 source('r/functions/V1_process_data.R')
 source('r/functions/utility_functions.R')
@@ -358,7 +358,9 @@ part_vars <- names(part)[grep(vars_remove, names(part), invert = TRUE)]
 part_vars <- union(part_vars, keep)
 
 part <- part[, part_vars, with = FALSE]
-part[, part_social_group := gsub("  ", " ", part_social_group)]
+if (!is.null(part$part_social_group)) {
+  part[, part_social_group := gsub("  ", " ", part_social_group)]
+}
 
 
 names(part) <- gsub("hhm_", "part_", names(part))
@@ -463,6 +465,12 @@ mult_contacts_cols <- grep("multiple_contacts_", names(part), value = TRUE)
 
 households <- households[, -c("cnt_type", mult_contacts_cols), with = FALSE]
 households[, phys_contact := as.numeric(phys_contact)]
+
+hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
+                "country", "country_code", "week", "survey_weekday",
+                "weekday", "cont_id")
+hhm_cols <- sort(grep("hhm_", names(households), value = T))
+households <- households[, c(hh_id_cols, hhm_cols), with = F]
 
 
 
