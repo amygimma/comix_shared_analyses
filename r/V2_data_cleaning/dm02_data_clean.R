@@ -397,23 +397,27 @@ dt[row_id == 1022 & part_id == 82502]$cnt_age
 households <- dt[!is.na(hhm_id) ]
 mult_contacts_cols <- grep("multiple_contacts_", names(part), value = TRUE)
 
-hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
-                "country", "country_code", "week", "survey_weekday",
-                "weekday", "cont_id")
-hhm_cols <- sort(grep("hhm_", names(households), value = T))
-households <- households[, c(hh_id_cols, hhm_cols), with = F]
-households <- households[, -c("cnt_type", mult_contacts_cols), with = FALSE]
-households[, phys_contact := as.numeric(phys_contact)]
-
 ### Child surveys
 ###################################
 if (as.character(part$panel[1]) %in% c("Panel C", "Panel D", "Panel EC", "Panel FC")) {
   source("r/V2_data_cleaning/dm02a_child_data_clean.R")
+
+  hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
+                  "country", "country_code", "week", "survey_weekday",
+                  "weekday", "cont_id", "child_participant")
 } else {
   part[, survey_type := "adult"]
+
+  hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
+                  "country", "country_code", "week", "survey_weekday",
+                  "weekday", "cont_id")
 }
 
+### Households continued
+###################################
 
+hhm_cols <- sort(grep("hhm_", names(households), value = T))
+households <- households[, c(hh_id_cols, hhm_cols), with = F]
 
 #Normalize contact nickname flags
 ###################################

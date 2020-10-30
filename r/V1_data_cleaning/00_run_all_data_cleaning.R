@@ -77,6 +77,10 @@ panel_ <- "panel_b"
 wave_ <- "wave_8"
 source(file.path(clean_path, "dm02_data_clean.R"))
 
+panel_ <- "panel_b"
+wave_ <- "wave_9"
+source(file.path(clean_path, "dm02_data_clean.R"))
+
 
 # Children's panels
 panel_ <- "panel_c"

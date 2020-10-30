@@ -3,6 +3,9 @@ source("r/user_setup.R")
 data_path <- "data"
 user_data_path <- USER_DATA_PATH
 
+country_codes <- "uk"
+source("r/V1_data_cleaning/00_run_all_data_cleaning.R")
+source("r/V1_data_cleaning/dm04_combine_survey_files.R")
 
 pad <- readRDS(file.path(data_path, "uk", "panels_a_d", "clean_participants.rds"))
 table(pad$wave, pad$panel)
@@ -13,6 +16,8 @@ table(cad$wave, cad$panel)
 had <- readRDS(file.path(data_path, "uk", "panels_a_d", "clean_households.rds"))
 table(had$wave, had$panel)
 
+source("r/V2_data_cleaning/00_run_all_data_cleaning.R")
+source("r/V2_data_cleaning/dm04_combine_survey_files.R")
 
 pef <- readRDS(file.path(data_path, "uk", "panels_e_f", "clean_participants.rds"))
 table(pef$wave, pef$panel)
