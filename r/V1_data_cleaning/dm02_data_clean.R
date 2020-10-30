@@ -4,7 +4,7 @@ library(data.table)
 if(!exists("country_code_")){
   country_code_ <- "uk"
   panel_ <- "panel_a"
-  wave_ <- "wave_8"
+  wave_ <- "wave_4"
 }
 source('r/functions/V1_process_data.R')
 source('r/functions/utility_functions.R')
@@ -493,8 +493,13 @@ contacts[, cnt_nickname_flag := ifelse(
   cnt_nickname_flag == "no contact", "suspected non contact", cnt_nickname_flag
 )]
 
+
 # Add total contacts and nickname flags
 ###################################
+
+if (!"suspected non contact" %in% unique(contacts$cnt_nickname_flag)) {
+  stop("Contact flags not in contacts data")
+}
 contacts[, individual_identified := fcase(
   cnt_nickname_flag == "individual identified", 1, default = 0
 )]

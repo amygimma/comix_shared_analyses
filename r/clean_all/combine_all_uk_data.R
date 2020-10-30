@@ -15,6 +15,7 @@ table(cad$wave, cad$panel)
 
 had <- readRDS(file.path(data_path, "uk", "panels_a_d", "clean_households.rds"))
 table(had$wave, had$panel)
+table(cad$cnt_nickname_flag, cad$wave_id)
 
 source("r/V2_data_cleaning/00_run_all_data_cleaning.R")
 source("r/V2_data_cleaning/dm04_combine_survey_files.R")
@@ -48,3 +49,4 @@ saveRDS(cntall, file.path(user_data_path, "uk/clean_contacts.rds"))
 
 saveRDS(hhall, "data/uk/clean_households.rds")
 saveRDS(hhall, file.path(user_data_path, "uk/clean_households.rds"))
+

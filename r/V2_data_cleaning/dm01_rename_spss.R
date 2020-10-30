@@ -9,7 +9,7 @@ library(data.table)
 if(!CLEANING_SCRIPT & !exists(spss_ref_)) {
   country_code_ <- "uk"
   panel_ <- "panel_f"
-  spss_ref_ <- "PFW5"
+  spss_ref_ <- "PFW6"
   SAVE_LOCAL <- T
 }
 
