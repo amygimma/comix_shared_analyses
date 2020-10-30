@@ -52,11 +52,12 @@ share_path_no <- "data/sharing/no"
 for( file_name in no_files) {
   dt <- readRDS(file.path(no_data, file_name))
   print(file_name)
-  browser()
+  # browser()
   table(dt$wave, dt$panel, dt$country)
 
   saveRDS(dt, file.path(share_path_no, file_name))
   write.csv(dt, file.path(share_path_no, gsub("rds", "csv", file_name)),
             row.names = FALSE)
+  message(file.path(share_path_no, file_name))
 }
 

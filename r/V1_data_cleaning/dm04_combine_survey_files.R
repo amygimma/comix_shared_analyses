@@ -48,9 +48,10 @@ combine_dts <- function(base_file_name, country_code) {
   return(combined_data_dt)
 }
 
-country_codes <- c("uk", "be", "nl", "no", "sc")[c(1)]
 for (country_code in country_codes) {
   # PARTICIPANTS
+  country_code <- tolower(country_code)
+
   part_base_file <- "clean_participants.rds"
   part_dt <- combine_dts(part_base_file, country_code)
   table(part_dt$panel, part_dt$wave)

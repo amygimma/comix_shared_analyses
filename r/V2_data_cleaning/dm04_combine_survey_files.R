@@ -3,9 +3,10 @@ source("r/functions/utility_functions.R")
 
 
 if(file.exists("r/user_setup.R")) source("r/user_setup.R")
+if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
+
 SAVE_LOCAL <- T
 data_path <- "data"
-if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 country_code <- "uk"
 
 combine_dts <- function(base_file_name, country_code) {

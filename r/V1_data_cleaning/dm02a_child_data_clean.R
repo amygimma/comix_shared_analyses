@@ -14,7 +14,7 @@ part[ , part_age := NA]
 hhm_id_pattern <- "^.*\\{_\\s*|\\s*\\}.*$"
 # Example response: "{#Q21_replace[{_5}]._scale.response.value}", need to isolate id "5"
 part[ , child_hhm_id := as.numeric(gsub(hhm_id_pattern, "", child_part_select_raw))]
-# Use hhm_id and child_hhm_idabove to add child's data to the selected child in 
+# Use hhm_id and child_hhm_idabove to add child's data to the selected child in
 # the household data
 households <- merge(households, part[, list(part_id, child_hhm_id, survey_type)],
                     by.x = c("part_id", "hhm_id"),
@@ -29,7 +29,7 @@ households[, child_participant := fcase(
 households[, survey_type := "child"]
 
 # Use hhm_id a
-# nd child_hhm_id above to add child's data to the selected child in 
+# nd child_hhm_id above to add child's data to the selected child in
 # the contacts data
 contacts <- merge(contacts, part[, list(part_id, child_hhm_id, survey_type)],
                   by.x = c("part_id", "hhm_id"),
@@ -47,10 +47,10 @@ contacts[, survey_type := "child"]
 # Add child demographics to participant columns
 # ################################################
 demographic_cols <- households[child_participant == TRUE,
-                               list(part_id, hhm_id, cnt_age, cnt_age_est_max, 
+                               list(part_id, hhm_id, cnt_age, cnt_age_est_max,
                                     cnt_age_est_min, cnt_gender)]
 
-part <- merge(part, demographic_cols, 
+part <- merge(part, demographic_cols,
               by.x = c("part_id", "child_hhm_id"), by.y = c("part_id", "hhm_id"))
 child_age_groups <- c("Under 1", "1-4", "5-11",  "12-17")
 child_matrix_age_bins <- c("[0,1)", "[1,5)", "[5,12)", "[12,18)")
@@ -81,9 +81,12 @@ part[, cnt_age := factor(cnt_age, levels = child_matrix_age_bins)]
 part[, cnt_gender_nb := cnt_gender]
 # Remove child from contacts
 contacts <- contacts[child_participant == FALSE]
-# 
+#
 # Remove particpant hmm_id == 0 in favor of hhm_id == 999 with contact info (see main data cleaning file)
 households <- households[hhm_id != 0]
+
+hhm_child <- households[child_participant == T]
+part[, part_student := match_variable(.DS, part_id, hhm_child, "hhm_student")]
 
 setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender", "cnt_gender_nb"),
          new = c("part_age_group", "part_age_est_max", "part_age_est_min", "part_gender", "part_gender_nb"))
