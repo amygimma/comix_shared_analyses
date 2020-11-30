@@ -4,7 +4,6 @@ library(data.table)
 data_path <- "data"
 # if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 # data_path <- USER_DATA_PATH
-
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "be"
@@ -247,7 +246,7 @@ vars_remove <- "cnt|phys|cont_id|hhm_gender|hhm_employstatus|hhm_id|hhm_age_grou
 hhm_vars_remove <- c("hhm_student", "contact_yn")
 vars_remove <- paste(c(vars_remove, hhm_vars_remove), collapse = "|")
 # This keeps the mult_contacts_*_phys columns
-keep <- names(part)[grep("multiple_work_cnt_belgium", names(part))]
+keep <- names(dt)[grep("work_cnt_|other_cnt_|ecdc_", names(part))]
 
 part_vars <- names(part)[grep(vars_remove, names(part), invert = TRUE)]
 part_vars <- union(part_vars, keep)
@@ -282,7 +281,7 @@ contacts[, individually_reported := 1]
 mult_contacts_cols <- grep("multiple_work_cnt_belgium", names(dt), value = TRUE)
 # mult_contacts_cols <- grep("precautions", mult_contacts_cols, value = TRUE, invert = T)
 total_mult_contacts <- 0
-if (any(mult_contacts_cols)) {
+if (length(mult_contacts_cols) > 0) {
   dt[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
   part[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
 

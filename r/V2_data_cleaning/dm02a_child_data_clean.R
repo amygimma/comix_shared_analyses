@@ -69,7 +69,7 @@ part[, cnt_age := fcase(
 
 )]
 table(part$cnt_age, useNA = "always")
-part[, cnt_gender_nb := cnt_gender]
+part[, cnt_gender := cnt_gender]
 
 
 # Add participant to contacts if appropriate
@@ -125,8 +125,8 @@ if(nrow(households[hhm_id == 999]) > 0){
 }
 
 # Set names of child contact demographics to participating child participant demographics
-setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender", "cnt_gender_nb"),
-         new = c("part_age_group", "part_age_est_max", "part_age_est_min", "part_gender", "part_gender_nb"))
+setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender"),
+         new = c("part_age_group", "part_age_est_max", "part_age_est_min", "part_gender"))
 
 hhm_child <- households[child_participant == T]
 part[, part_student := match_variable(.DS, part_id, hhm_child, "hhm_student")]
