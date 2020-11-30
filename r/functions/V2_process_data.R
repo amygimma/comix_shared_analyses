@@ -121,11 +121,10 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
     }
   }
   ## Create a data table of the "loop" variable questions?
-
   ## Sapply creates a list of loop variables names by splitting where "_" occurs
   questions_list_scale <- sapply(
-    unique(df[grepl("scale", variable) &
-                !grepl("loop", variable), variable]),
+    unique(df[(grepl("scale", variable) &
+                !grepl("loop", variable)) | grepl("newq", variable), variable]),
     strsplit, split="_"
   )
 
@@ -142,12 +141,14 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   if (!("V5" %in% names(questions_scale))) {
     questions_scale[, V5 := NA]
   }
-
   # q75 and q76 are tables but act more like scales
-  if (as.character(df$panel[1]) %in% c("Panel A", "Panel C", "Panel D")) {
+  if (as.character(df$panel[1]) %in% c("Panel A", "Panel B", "Panel C", "Panel D") & df$qcountry[1] != "BE") {
     participant_table_questions <- grep("q75|q76",  questions_scale$V1, value = TRUE)
   } else if ((as.character(df$panel[1]) %in% c("Panel E", "Panel EC", "Panel F", "Panel FC"))) {
     participant_table_questions <- grep("q79|q80|q81",  questions_scale$V1, value = TRUE)
+  } else if (df$panel[1] %in% c("Panel B", "Panel BC") & df$qcountry[1] == "BE") {
+    participant_table_questions <- grep("newq",  questions_scale$V1, value = TRUE)
+
   }
   # set table row to 0 as it is asked of the participant
   questions_scale[V1 %in% participant_table_questions, V3 :=  0L]
@@ -159,7 +160,9 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
                                        paste0(V2,"_",V5))
                   ]
   questions_scale <- questions_scale[! newname %in% c("q35", "q36", "q37", "q38",
-                                                      "q52", "q55", "Q60")]
+                                                      "q52", "q55", "Q60", "table_q21") &
+                                       !grepl("q21_replace", V1)]
+
   questions_scale[, "tablename" := paste0("table_",V2)]
 
   for(q in unique(questions_scale[, V2])){
@@ -199,7 +202,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   # Contact flags
   # ##########################
 
-  contact_flags <- paste0("contact", c(900:max(table_q66$table_row)))
+  contact_flags <- paste0("contact", c(21:max(table_q66$table_row)))
   table_contact_flag <- df[variable %in% contact_flags]
   table_contact_flag <- table_contact_flag[!is.na(value) & value != "0"]
   setnames(table_contact_flag, old = "value", new = "contact_name_flag")
@@ -251,7 +254,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   ## Remove tables from main dataset and export to global env
   # df <- df[!variable %in% c(questions_loop$V1, questions_scale$V1, contact_flags)]
   df <- df[!variable %in% c(questions_scale$V1, contact_flags)]
-  df <- dcast(df, qcountry+respondent_id+panel+wave ~ variable)
+  df <- dcast(df, qcountry+respondent_id+panel+wave ~ variable )
 
   match_vars <- c("qcountry", "respondent_id", "panel", "wave", "table_row")
 
@@ -267,7 +270,6 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
 
   df[, table_row := 0L]
   # df[, table_row := NULL]
-
   combine_dt <- Reduce(function(...) merge(..., by = match_vars, all = T), table_names)
 
   resp <- survey[, list(Respondent_ID, Qcountry, Panel, Wave)]
@@ -281,6 +283,5 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
 
   x_dt <- merge(df, combine_dtr, by = c(match_vars), all = TRUE)
 
-  # browser()
   return(x_dt)
 }

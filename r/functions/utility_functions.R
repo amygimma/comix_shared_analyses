@@ -200,8 +200,15 @@ add_n_cnts_location_cols <- function(part_dt, cont_dt, replace_existing_cols = F
   # Add each column
   for (count_item in count_list) {
     by <- c("panel", "wave", "country_code", "part_id")
-    part_dt <- add_contact_count_col(part_dt, cont_dt, count_item$varname,
-                                     count_item$exp, by)
+    skip <- FALSE
+    # if (count_item$varname == "n_cnt_inside") browser()
+    tryCatch(cont_dt[eval(count_item$exp)], error = function(e) { skip <<- TRUE})
+    if(skip) {
+      message(paste("Warning: could not add", count_item$varname))
+    } else {
+      part_dt <- add_contact_count_col(part_dt, cont_dt, count_item$varname,
+                                       count_item$exp, by)
+    }
   }
 
   return(part_dt)
@@ -449,7 +456,13 @@ add_week_number <- function(dt) {
                       wave_id == "E 6", 30,
                       wave_id == "EC 6", 30,
                       wave_id == "F 6", 31,
-                      wave_id == "FC 6", 31
+                      wave_id == "FC 6", 31,
+                      wave_id == "E 7", 32,
+                      wave_id == "EC 7", 32,
+                      wave_id == "F 7", 33,
+                      wave_id == "FC 7", 33,
+                      wave_id == "E 8", 34,
+                      wave_id == "EC 8", 34
 
                       )]
 

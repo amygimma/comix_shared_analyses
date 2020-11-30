@@ -30,8 +30,9 @@ find_q63_spss <- function(panel_, wave_, country_code_, spss_files_) {
   }
 }
 
+spss_path <- "data/raw_data/"
 source("r/user_setup.R")
-spss_path <- USER_SPSS_PATH
+# spss_path <- USER_SPSS_PATH
 
 if (exists("spss_ref_")) {
   spss_data_path <- file.path(spss_path, country_code_, panel_)
@@ -53,7 +54,7 @@ if (exists("spss_ref_")) {
   file.exists(spss_file)
 }
 
-
+spss_file
 # spss_file <- here(path, "20-037762_PCW1_interim_v1_130520_ICUO_sav.sav")
 
 df <- read.spss(spss_file)

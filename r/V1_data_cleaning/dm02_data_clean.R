@@ -2,9 +2,9 @@ library(data.table)
 
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
-  country_code_ <- "uk"
+  country_code_ <- "UK"
   panel_ <- "panel_a"
-  wave_ <- "wave_4"
+  wave_ <- "wave_8"
 }
 source('r/functions/V1_process_data.R')
 source('r/functions/utility_functions.R')
@@ -23,9 +23,9 @@ if (survey$Panel[1] == "Panel D" & survey$Wave[1] == "Wave 1"){
 dt_ <- process_data(survey)
 # Re-calculate the hhm added by particpants in the children's surveys to assign
 # hhm_ids to over 1000  (new houshold members are originally assigned variables
-# of 150 - 156) to group with the adult particpant which is recorded as 999
+# of 150 - 200) to group with the adult particpant which is recorded as 999
 dt_[, table_row :=
-      ifelse(table_row >= 150 & table_row <= 160, table_row - 150 + 1000, table_row)]
+      ifelse(table_row >= 150 & table_row <= 200, table_row - 150 + 1000, table_row)]
 
 
 table(dt_$qcountry)
@@ -357,7 +357,7 @@ part_vars <- names(part)[grep(vars_remove, names(part), invert = TRUE)]
 part_vars <- union(part_vars, keep)
 
 part <- part[, part_vars, with = FALSE]
-if (!is.null(part$part_social_group)) {
+if (!is.null(part$part_social_group) & country_code_ == "uk") {
   part[, part_social_group := gsub("  ", " ", part_social_group)]
 }
 

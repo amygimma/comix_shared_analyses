@@ -23,8 +23,8 @@ child_qs <- grep("QP", names(survey), value = T)
 child_cs <- grep("Pcontact", names(survey), value = T)
 child_cols <- c(child_qs, child_cs)
 
-adult_qs <- grep("^Q[0-9]+", names(survey), value = T)
-adult_qs <- grep("^Q23|Q20", adult_qs, value = T, invert = T)
+adult_qs <- grep("^Q[0-9]+|NewQ", names(survey), value = T)
+adult_qs <- grep("^Q23|Q20|NewQP", adult_qs, value = T, invert = T)
 adult_cs <- grep("^contact[0-9]+", names(survey), value = T)
 adult_cols <- c(adult_qs, adult_cs)
 
