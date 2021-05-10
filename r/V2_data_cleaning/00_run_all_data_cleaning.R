@@ -31,8 +31,12 @@ list(panel_ = "panel_f", wave_ = "wave_4", spss_ref_ = "PFW4"),
   list(panel_ = "panel_f", wave_ = "wave_5", spss_ref_ = "PFW5"),
   list(panel_ = "panel_f", wave_ = "wave_6", spss_ref_ = "PFW6"),
   list(panel_ = "panel_f", wave_ = "wave_7", spss_ref_ = "PFW7")
-
-
+  list(panel_ = "panel_f", wave_ = "wave_1", spss_ref_ = "PFW1"),
+  list(panel_ = "panel_f", wave_ = "wave_2", spss_ref_ = "PFW2"),
+  list(panel_ = "panel_f", wave_ = "wave_3", spss_ref_ = "PFW3"),
+  list(panel_ = "panel_f", wave_ = "wave_4", spss_ref_ = "PFW4"),
+  list(panel_ = "panel_f", wave_ = "wave_5", spss_ref_ = "PFW5"),
+  list(panel_ = "panel_f", wave_ = "wave_5", spss_ref_ = "PFW5")
 )
 
 scripts_path <- file.path("r", "V2_data_cleaning")

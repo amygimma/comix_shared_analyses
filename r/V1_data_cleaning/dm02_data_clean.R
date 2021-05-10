@@ -2,9 +2,10 @@ library(data.table)
 
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
-  country_code_ <- "UK"
+
+  country_code_ <- "uk"
   panel_ <- "panel_a"
-  wave_ <- "wave_8"
+  wave_ <- "wave_4"
 }
 source('r/functions/V1_process_data.R')
 source('r/functions/utility_functions.R')

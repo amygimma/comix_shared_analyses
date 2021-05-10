@@ -203,6 +203,7 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   # ##########################
 
   contact_flags <- paste0("contact", c(21:max(table_q66$table_row)))
+
   table_contact_flag <- df[variable %in% contact_flags]
   table_contact_flag <- table_contact_flag[!is.na(value) & value != "0"]
   setnames(table_contact_flag, old = "value", new = "contact_name_flag")

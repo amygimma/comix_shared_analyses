@@ -473,7 +473,6 @@ add_week_number <- function(dt) {
                       wave_id == "EC 10", 38,
                       wave_id == "F 10", 39,
                       wave_id == "FC 10", 39
-
                       )]
 
   if (any(is.na(dt$week))) stop("Error: Missing week numbers in `add_week_number()`")
