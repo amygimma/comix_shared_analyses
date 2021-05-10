@@ -9,7 +9,7 @@ data_path <- "data"
 if(!exists("country_code_")){
   country_code_ <- "uk"
   panel_ <- "panel_e"
-  wave_ <- "wave_8"
+  wave_ <- "wave_10"
 }
 source('r/functions/V2_process_data.R')
 source('r/functions/utility_functions.R')
@@ -25,7 +25,7 @@ table(survey$Wave, survey$Panel)
 table(survey$Sampletype)
 table(survey$survey_type)
 
-
+# source('r/functions/V2_process_data.R')
 dt_ <- process_data(survey)
 
 table(dt_$table_row)

@@ -73,7 +73,11 @@ part[, cnt_gender := cnt_gender]
 
 
 # Add participant to contacts if appropriate
-parent_cnts <- dt[row_id %in% c(0,999)]
+if (dt$country_code[1] == "BE") {
+  parent_cnts <- dt[row_id %in% c(0,999)]
+} else {
+  parent_cnts <- dt[row_id == 0]
+}
 cnt_adult_age_bins <- c(18, 20, seq(25, 100, 10))
 parent_cnts[ , part_age_group := cut(part_age,
                            breaks = cnt_adult_age_bins,
@@ -95,10 +99,12 @@ contacts[hhm_id == 0, cnt_gender :=
              match_variable(.SD, part_id, parent_cnts, "part_gender_nb"), by = "part_id"]
 contacts[hhm_id == 0, cont_id := paste0(part_id ,"-", 999, "-", week)]
 
-if (dt$country_code[1] == "BE") {
+# if (dt$country_code[1] == "BE") {
   contacts <- contacts[hhm_id == 0, hhm_id := 999]
   table(contacts[hhm_id == 999]$cnt_age)
-}
+# } else {
+#   contacts <- contacts[hhm_id == 0, hhm_id := 999]
+# }
 # Add participant to contacts (assigned to hhm_id 999 to follow original ipsos structure)
 
 if(nrow(contacts[hhm_id == 999]) > 0){

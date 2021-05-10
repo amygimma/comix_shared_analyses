@@ -7,8 +7,8 @@ data_path <- "data"
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
   country_code_ <- "be"
-  panel_ <- "panel_bc"
-  wave_ <- "wave_1"
+  panel_ <- "panel_b"
+  wave_ <- "wave_3"
 }
 source('r/functions/V2_process_data.R')
 source('r/functions/utility_functions.R')

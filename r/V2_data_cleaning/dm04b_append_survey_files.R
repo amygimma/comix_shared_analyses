@@ -5,9 +5,9 @@ source("r/user_setup.R")
 
 # SETUP
 base_data_path <- "data"
-if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA_PATH
+# if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA_PATH
 panel_paths <- c("Panel E", "Panel EC")
-wave_paths <- c("Wave 8")
+wave_paths <- c("Wave 10")
 
 
 combine_dts <- function(base_file_name, country_code, panels, waves) {
@@ -35,7 +35,8 @@ combine_dts <- function(base_file_name, country_code, panels, waves) {
   })
 
   combined_data_dt <- readRDS(file.path(base_data_file_path))
-  combined_data_dt <- combined_data_dt[!wave == "Wave 8"]
+  # combined_data_dt <- combined_data_dt[wave != "Wave 2"]
+
   if (length(data_dts) > 0) {
     for(i in 1:length(data_dts)) {
       message(data_paths[i])
@@ -97,7 +98,7 @@ for (country_code in country_codes) {
 
   part_dt <- add_n_cnts_location_cols(part_dt, cont_dt, replace_existing_cols = TRUE)
 
-  # browser()
+  browser()
   saveRDS(part_dt,
           file.path(base_data_path, country_code, part_base_file))
   saveRDS(cont_dt,

@@ -257,7 +257,6 @@ process_data <- function(df, export_var_names = FALSE, skip_loop_questions = FAL
   df <- dcast(df, qcountry+respondent_id+panel+wave ~ variable )
 
   match_vars <- c("qcountry", "respondent_id", "panel", "wave", "table_row")
-
   e <- environment()
 
   # Generates a message for new or missing question tables

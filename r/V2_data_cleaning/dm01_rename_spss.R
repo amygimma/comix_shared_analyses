@@ -6,10 +6,11 @@ library(data.table)
 ##
 
 # OPTIONAL SETUP
+if(!exists("CLEANING_SCRIPT")) CLEANING_SCRIPT <- F
 if(!CLEANING_SCRIPT & !exists("spss_ref_")) {
-  country_code_ <- "be"
-  panel_ <- "panel_b"
-  spss_ref_ <- "BE2_Wave1"
+  country_code_ <- "uk"
+  panel_ <- "panel_e"
+  spss_ref_ <- "PEW10"
   SAVE_LOCAL <- T
 }
 
@@ -96,3 +97,4 @@ message("Splitting survey")
 wave_ <- wave_name
 panel_ <- panel_name
 source(file.path(scripts_path, "dm_split_survey.R"))
+
