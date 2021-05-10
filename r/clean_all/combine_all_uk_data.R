@@ -44,7 +44,7 @@ table(hhall$wave, hhall$panel)
 saveRDS(pall, "data/uk/clean_participants.rds")
 saveRDS(pall, file.path(user_data_path, "uk/clean_participants.rds"))
 
-dsaveRDS(cntall, "data/uk/clean_contacts.rds")
+saveRDS(cntall, "data/uk/clean_contacts.rds")
 saveRDS(cntall, file.path(user_data_path, "uk/clean_contacts.rds"))
 
 saveRDS(hhall, "data/uk/clean_households.rds")

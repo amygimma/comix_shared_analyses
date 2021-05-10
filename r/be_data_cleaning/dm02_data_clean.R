@@ -4,46 +4,36 @@ library(data.table)
 data_path <- "data"
 # if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 # data_path <- USER_DATA_PATH
-
 ## Change object here for manual cleaning
 if(!exists("country_code_")){
-  country_code_ <- "uk"
-  panel_ <- "panel_e"
-  wave_ <- "wave_10"
+  country_code_ <- "be"
+  panel_ <- "panel_b"
+  wave_ <- "wave_3"
 }
 source('r/functions/V2_process_data.R')
 source('r/functions/utility_functions.R')
 
 survey <-
   readRDS(file.path(data_path, country_code_, panel_, wave_, "survey_data.rds"))
+qp_names <- grep("qP", names(survey), value = T)
+q_names <- gsub("qP", "q", qp_names)
+
+setnames(survey, old = qp_names, new = q_names)
+
+
 table(survey$Panel, survey$Wave, survey$Qcountry)
-
-
-# table(full_survey$Sampletype)
-
-table(survey$Wave, survey$Panel)
 table(survey$Sampletype)
-table(survey$survey_type)
 
-# source('r/functions/V2_process_data.R')
+
 dt_ <- process_data(survey)
 
-table(dt_$table_row)
-dto <- dt_
+table(dt_$table_row, useNA = "always")
 
-# Handles hhm who are added week to week (the row ids change week to week),
-# assigns value of over 999, original hhm are under 20
-# non-hhm contacts start at 20, to remain consistent with past data structure
-dt_[table_row > 19 & table_row < 900, table_row := table_row + 999]
-
-
-dt_[table_row >= 900 & table_row < 999 , table_row := table_row - 880]
-
-table(dt_$table_row)
-dt_[is.na(table_row)]$table_row
-
-table(dt_$qcountry)
-
+# Re-calculate the hhm added by particpants in the children's surveys to assign
+# hhm_ids to over 1000  (new houshold members are originally assigned variables
+# of 150 - 200) to group with the adult particpant which is recorded as 999
+dt_[, table_row :=
+      ifelse(table_row >= 150 & table_row <= 200, table_row - 150 + 1000, table_row)]
 
 # Check number of participants is correct
 n_participants_check <- length(unique(dt_$respondent_id))
@@ -53,7 +43,7 @@ if (is.null(dt_$hhcomp_remove)) {
 
   n_households_check <- sum((dt_$table_row <= 19 |
                                dt_$table_row >= 999) & dt_$table_row != 0,
-                               na.rm = T)
+                            na.rm = T)
 } else {
   # household check - adult surveys:  hhm <= 19
   #  children's surveys: account for the adult participant (999) and household
@@ -75,17 +65,20 @@ print(paste("Households:", n_households_check))
 print(paste("Contacts:", n_contacts_check))
 
 ## Check variables names
-varnames <- as.data.table(read.csv("codebook/var_names_v2.csv"))
+varnames <- as.data.table(read.csv("codebook/be_var_names_v2.csv"))
+
 
 change_names <- function(df, varnames, c_code) {
-  loops <- grep("loop|contact[1-100]|contact[900-998]|hhcompremove_[0-9]|hhcompadd_[0-9]|_i$", names(df), value = T)
+  loops <- grep(
+    "loop|contact[1-100]|contact[900-998]|hhcompremove_[0-9]|hhcompadd_[0-9]|_i$",
+    names(df), value = T)
   df <- df[, -loops, with = F]
 
   c_codes <- c(be = "be", uk = "uk", nl = "nl")
   remove <- paste(setdiff(c_codes, c_code), collapse = "|")
   keep <- grep(remove, varnames$var, invert = T, value = T)
   varnames <- varnames[var %in% keep]
-
+  # browser()
   index_name <- match(names(df), varnames$var)
   index_name <- index_name[!is.na(index_name)]
   df <- df[, varnames$var[index_name], with = FALSE]
@@ -114,15 +107,10 @@ dt <- change_names(dt_, varnames, tolower(dt_$qcountry))
 dt[, part_id := fcase(
   panel == "Panel A", 10000 + part_id,
   panel == "Panel B", 20000 + part_id,
-  panel == "Panel C", 30000 + part_id,
-  panel == "Panel D", 40000 + part_id,
-  panel == "Panel E", 50000 + part_id,
-  panel == "Panel EC", 60000 + part_id,
-  panel == "Panel F", 70000 + part_id,
-  panel == "Panel FC", 80000 + part_id
+  panel == "Panel BC", 30000 + part_id
 
 )]
-summary(dt$part_id)
+
 dt[, part_age := as.numeric(part_age)]
 
 
@@ -133,42 +121,52 @@ dt[,   country := fcase(
   as.character(country_code) == "NO", "Norway"
 )]
 
-# add week number
-dt <- add_week_number(dt)
 
 ## Format dates
-dt[, survey_date := as.Date(paste0(year,"-", month,"-", day ))]
+dt[row_id == 0, survey_date := as.Date(paste0(year,"-", month,"-", day ))]
+
+#  Date is contact date to match POLYMOD for use in socialmixr
 dt[, date := survey_date - 1]
 
-
 part_dates <- dt[row_id == 0, list(part_id, date)]
-dt[,date := NULL]
+dt[, date := NULL]
 dt <- merge(dt, part_dates, by = "part_id")
+dt[row_id != 0, survey_date := date + 1]
 dt[, survey_weekday := weekdays(survey_date)]
 dt[, weekday := weekdays(date)]
+# add week number
+# dt <- add_week_number(dt)
+dt[ , wave_id := toupper(paste(gsub("panel ", "", tolower(as.character(panel))),
+                               gsub("wave ", "", tolower(as.character(wave)))))]
+dt[!is.na(survey_date), week := week(min(survey_date))]
 
+table(dt$survey_weekday, useNA = "always")
+table(dt$weekday, useNA = "always")
+table(dt$week, useNA = "always")
 
-
-
+# HH Sizes
 table(dt$hh_size, useNA = "always")
 dt[!is.na(hh_size), hh_size := fcase(
   hh_size == "11 or more", 12,
   hh_size == "None", 1,
   as.numeric(hh_size) %in% seq(1,10), as.numeric(hh_size))
-  ]
+]
 table(dt$hh_size, useNA = "always")
 
 # Save as factor to be clear that 12 is "12 or more"
 dt[!is.na(hh_size), hh_size := factor(hh_size,
-                       levels = seq(1,12,1),
-                       labels = c("1","2", "3", "4", "5", "6", "7", "8", "9",
-                                  "10", "11", "12 or more"))]
+                                      levels = seq(1,12,1),
+                                      labels = c("1","2", "3", "4", "5", "6", "7", "8", "9",
+                                                 "10", "11", "12 or more"))]
 table(dt$hh_size)
 
+
+# cnt/hhm age groups
 dt[is.na(cnt_age), cnt_age := hhm_age_group]
 dt[is.na(cnt_gender), cnt_gender := hhm_gender]
 
 
+# Part age groups
 ### Do not change these age bands as they are fixed in the survey.
 ## Add in min and max age group
 age_groups <- c("Under 1", "1-4", "5-9", "5-11", "10-14", "12-15", "15-19", "16-17", "18-19", "20-24",
@@ -193,7 +191,13 @@ table(dt$part_age_group, useNA = "always")
 
 ## Create ID for contacts and households members
 
+if (dt$sample_type[1] == "Sampletype=2 Parent sample") {
+  dt[row_id != 0 | hhm_contact_yn == "Yes", cont_id := paste0(part_id ,"-", row_id, "-", week)]
+
+}
+
 dt[row_id != 0, cont_id := paste0(part_id ,"-", row_id, "-", week)]
+
 if (dt$panel[1] %in% c("Panel EC", "Panel FC")) {
   dt[row_id == 0 & hhm_contact_yn == "Yes", cont_id := paste0(part_id ,"-", row_id, "-", week)]
 }
@@ -205,7 +209,7 @@ if (!is.null(dt$hhcomp_remove)) {
   # check
   dt[hhcomp_remove == "Yes", cont_id := NA]
   dt[(row_id <= 19 | row_id >= 999) & (is.na(hhcomp_remove) |
-       hhcomp_remove != "Yes"), hhm_id := row_id]
+                                         hhcomp_remove != "Yes"), hhm_id := row_id]
 } else {
   # Adult survey asked for hhm each time, so limit is 11 and none are removed
   dt[row_id <= 19 | row_id >= 999, hhm_id := row_id]
@@ -229,75 +233,30 @@ if (survey$Panel[1] %in% c("Panel C", "Panel D",  "Panel EC", "Panel FC")) {
 }
 
 
+# Physical contact
 dt[,   phys_contact := fcase(
   cnt_phys == "Yes", 1,
   cnt_phys == "No", 0,
   default = NA_real_)]
 
-
-## Create a regions variables of near to NHS regions
-
-
-if(dt$country_code[1] == "UK") {
-  dt <- dt[, regions := fcase(
-    area_3_name == "Yorkshire and The Humber", "Yorkshire and The Humber",
-    area_3_name == "Yorkshire and Humberside", "Yorkshire and The Humber",
-    area_3_name == "Yorkshire and", "Yorkshire and The Humber",
-    area_3_name == "East Anglia", "East of England",
-    area_3_name == "East of England", "East of England",
-    area_3_name == "East of Engla", "East of England",
-    area_3_name == "Greater London", "Greater London",
-    area_3_name == "Greater Londo", "Greater London",
-    area_3_name == "North East", "North East",
-    area_3_name == "North West", "North West",
-    area_3_name == "South East", "South East",
-    area_3_name == "South West", "South West",
-    area_3_name == "West Midlands", "West Midlands",
-    area_3_name == "East Midlands", "East Midlands",
-    area_3_name == "Northern Ireland", "Northern Ireland",
-    area_3_name == "Northern Irel", "Northern Ireland",
-
-    area_3_name == "Scotland", "Scotland",
-    area_3_name == "Wales", "Wales"
-  )
-  ]
-}
-
-if(!"part_reported_all_contacts" %in% names(dt)) {
-  dt$part_reported_all_contacts <- NA_real_
-}
-individually_reported <- unique(dt$part_reported_all_contacts)
-individually_reported_yes <- individually_reported[
-  grepl("I individually included every person", individually_reported)]
-individually_reported_no <- individually_reported[
-  grepl("I did not individually include", individually_reported)]
-
-dt <- dt[, part_reported_all := fcase(
-  row_id == 0 &
-    part_reported_all_contacts == individually_reported_yes, 1,
-  row_id == 0 &
-    part_reported_all_contacts == individually_reported_no, 0,
-  row_id != 0, NA_real_
-)]
-
 ## Split the data into participants, households, and contacts
 part <- dt[hhm_id == 0 & !is.na(part_age)]
 nrow(part)
-vars_remove <- "cnt|phys|cont_id|hhm_gender|hhm_pregnant|hhm_employstatus|hhm_id|hhm_age_group"
-hhm_vars_remove <- c("not_attend_childcare", "close_childcare", "hhm_student", "contact_yn")
+vars_remove <- "cnt|phys|cont_id|hhm_gender|hhm_employstatus|hhm_id|hhm_age_group"
+hhm_vars_remove <- c("hhm_student", "contact_yn")
 vars_remove <- paste(c(vars_remove, hhm_vars_remove), collapse = "|")
 # This keeps the mult_contacts_*_phys columns
-keep <- names(part)[grep("multiple_contacts", names(part))]
+keep <- names(dt)[grep("work_cnt_|other_cnt_|ecdc_", names(part))]
 
 part_vars <- names(part)[grep(vars_remove, names(part), invert = TRUE)]
 part_vars <- union(part_vars, keep)
 
 part <- part[, part_vars, with = FALSE]
-part[, part_social_group := gsub("  ", " ", part_social_group)]
 
 names(part) <- gsub("hhm_", "part_", names(part))
 
 nrow(part)
+
 
 # Remove participants and household member who were not contacts
 contacts <- dt[!is.na(cont_id)]
@@ -318,75 +277,67 @@ contacts[, individually_reported := 1]
 ### Clean, Reshape, and Merge Multiple Contacts
 ######################################################
 
-id_cols <- c("part_id", "date", "panel", "wave", "wave_id", "country",
-             "country_code", "week", "weekday", "hhm_contact_yn",
-             "part_reported_all_contacts")
-mult_contacts_cols <- grep("multiple_contacts_", names(part), value = TRUE)
-mult_contacts_cols <- grep("precautions", mult_contacts_cols, value = TRUE, invert = T)
-dt[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
-part[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
 
-mult_contacts <- dt[part_reported_all == 0,
-                    c(id_cols, mult_contacts_cols), with = FALSE]
-mult_contacts <- melt(mult_contacts,
-                       measure.vars = mult_contacts_cols,
-                       id_cols = id_cols)
-mult_contacts[is.na(value), value := 0]
-total_mult_contacts <- sum(as.numeric(mult_contacts$value))
+mult_contacts_cols <- grep("multiple_work_cnt_belgium", names(dt), value = TRUE)
+# mult_contacts_cols <- grep("precautions", mult_contacts_cols, value = TRUE, invert = T)
+total_mult_contacts <- 0
+if (length(mult_contacts_cols) > 0) {
+  dt[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
+  part[, (mult_contacts_cols) :=  lapply(.SD, as.numeric), .SDcols = mult_contacts_cols]
 
-if (length(mult_contacts_cols) == 0) {
-  total_mult_contacts <- 0
-} else {
-  # Add contacts columns
-  mult_contacts <- mult_contacts[, cont_id :=
-                                   paste(part_id, (2000 + rowid(part_id)), week, sep = "-")]
-  mult_contacts[, cnt_work := ifelse(grepl("work", variable), "Yes", "No")]
-  mult_contacts[, cnt_school := ifelse(grepl("school", variable), "Yes", "No")]
-  mult_contacts[, cnt_other := ifelse(grepl("other", variable), "Yes", "No")]
-  mult_contacts[, phys_contact := NA_real_]
-  mult_contacts[, cnt_home := "No"]
-  mult_contacts[, hhm_contact_yn := "No"]
-  mult_contacts[, individually_reported := 0]
+  mult_contact_detail_cols <-  c("work_cnt_under_12", "work_cnt_12_to_17",
+                                 "work_cnt_18_to_64", "work_cnt_65_plus", "work_cnt_dont_know",
+                                 "work_cnt_duration", "work_cnt_distanced", "work_cnt_barrier",
+                                 "work_cnt_wash_hands", "work_cnt_high_risk")
 
-  mult_cnt_age_groups <- c("0-17", "18-64", "65+")
-  mult_cnt_age_min <- c(0, 18, 65)
-  mult_cnt_age_max <- c(17, 64, 100)
-  mult_contacts[, cnt_age := fcase(
-    grepl("contacts_child", variable), mult_cnt_age_groups[1],
-    grepl("contacts_adult", variable), mult_cnt_age_groups[2],
-    grepl("contacts_older_adult", variable), mult_cnt_age_groups[3])
-    ]
+  # mult_contacts_cols <- c(mult_contacts_cols, mult_contact_detail_cols)
 
-  mult_contacts[, cnt_age_est_min := fcase(
-    grepl("contacts_child", variable), mult_cnt_age_min[1],
-    grepl("contacts_adult", variable), mult_cnt_age_min[2],
-    grepl("contacts_older_adult", variable), mult_cnt_age_min[3])
-    ]
+  id_cols <- c("part_id", "date", "panel", "wave", "wave_id", "country",
+               "country_code", "week", "weekday", "hhm_contact_yn",
+               "part_work_cnt_over_20")
+  id_cols <- c(id_cols, mult_contact_detail_cols)
 
-  mult_contacts[, cnt_age_est_max := fcase(
-    grepl("contacts_child", variable), mult_cnt_age_max[1],
-    grepl("contacts_adult", variable), mult_cnt_age_max[2],
-    grepl("contacts_older_adult", variable), mult_cnt_age_max[3])
-    ]
+  mult_contacts <- dt[part_work_cnt_over_20 == "Yes" & !is.na(multiple_work_cnt_belgium),
+                      c(id_cols, mult_contacts_cols), with = FALSE]
 
-  mult_contacts[, cnt_age := factor(cnt_age, levels = mult_cnt_age_groups)]
+  mult_contacts <- melt(mult_contacts,
+                        measure.vars = mult_contacts_cols,
+                        id_cols = id_cols)
+  mult_contacts[is.na(value), value := 0]
+  total_mult_contacts <- sum(as.numeric(mult_contacts$value))
 
-  # Create new contact rows as reported
-  mult_contacts <- mult_contacts[, list(variable = rep(variable, each = value)),by = names(mult_contacts)]
-  mult_contacts[, individually_reported := 0]
+  if (length(mult_contacts_cols) == 0) {
+    total_mult_contacts <- 0
+  } else {
+    # Add contacts columns
+    # mult_contacts <- mult_contacts[, cont_id :=
+    #                                  paste(part_id, (2000 + 1:.N), week, sep = "-"), by = c("part_id")]
+    mult_contacts[, cnt_work := ifelse(grepl("work", variable), "Yes", "No")]
+    mult_contacts[, cnt_school := ifelse(grepl("school", variable), "Yes", "No")]
+    mult_contacts[, cnt_other := ifelse(grepl("other", variable), "Yes", "No")]
+    mult_contacts[, phys_contact := NA_real_]
+    # Assuming contacts at work are not home contacts (or they would hopefully be listed individually)
+    mult_contacts[, cnt_home := "No"]
+    # Assuming contacts at work are not household contacts (or they would hopefully be listed individually)
+    mult_contacts[, hhm_contact_yn := "No"]
+    mult_contacts[, individually_reported := 0]
 
-  if(nrow(mult_contacts) != total_mult_contacts) {
-    stop("Check total number of multiple contact rows")
+    # Create new contact rows as reported
+    mult_contact_rows <- mult_contacts[, list(variable = rep(variable, each = value)),by = names(mult_contacts)]
+    mult_contact_rows[, individually_reported := 0]
+
+    if(nrow(mult_contact_rows) != total_mult_contacts) {
+      stop("Check total number of multiple contact rows")
+    }
+
+    bind_cols <- intersect(names(contacts), names(mult_contact_rows))
+
+    contacts <- rbind(contacts, mult_contact_rows[, c(bind_cols), with = FALSE],
+                      fill = T)
+    contacts[, phys_contact := as.numeric(phys_contact)]
+    nrow(contacts)
   }
-
-  bind_cols <- intersect(names(contacts), names(mult_contacts))
-
-  contacts <- rbind(contacts, mult_contacts[, c(bind_cols), with = FALSE],
-                    fill = T)
-  contacts[, phys_contact := as.numeric(phys_contact)]
-  nrow(contacts)
 }
-
 
 ### Households
 ###################################
@@ -398,6 +349,23 @@ mult_contacts_cols <- grep("multiple_contacts_", names(part), value = TRUE)
 ### Child surveys
 ###################################
 if (as.character(part$panel[1]) %in% c("Panel C", "Panel D", "Panel EC", "Panel FC")) {
+  source("r/V2_data_cleaning/dm02a_child_data_clean.R")
+
+  hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
+                  "country", "country_code", "week", "survey_weekday",
+                  "weekday", "cont_id", "child_participant")
+} else {
+  part[, survey_type := "adult"]
+
+  hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
+                  "country", "country_code", "week", "survey_weekday",
+                  "weekday", "cont_id")
+}
+
+
+### Child surveys
+###################################
+if (as.character(part$panel[1]) %in% c("Panel BC")) {
   source("r/V2_data_cleaning/dm02a_child_data_clean.R")
 
   hh_id_cols <- c("part_id", "survey_date", "date", "panel", "wave", "wave_id",
@@ -459,6 +427,8 @@ country_code <- tolower(dt$country_code[1])
 data_path <- "data"
 survey_path <- file.path(data_path, country_code, panel_name, wave_name)
 
+
+
 if (!file.exists(survey_path)) {
   if(!file.exists(file.path(data_path, country_code))) {
     dir.create(file.path(data_path, country_code))
@@ -491,12 +461,14 @@ if (part$survey_type[1] == "adult") {
   if(n_contacts_check + total_mult_contacts != nrow(contacts)){
     stop("Check total number of contact rows")
   }
+  message("Adult survey checked")
 }
 
 if (part$survey_type[1] == "child") {
-  v2p <- c("Panel EC", "Panel FC")
+
+  v2p <- c("Panel BC")
   if (part$panel[1] %in% v2p & unique(part$sample_type) !=  "Sampletype=2 Parent sample") {
-    # Only panels E and F are sent with adults and children combined
+    # Only panel BE-B, UK-E,UK-F sent with adults and children combined
     stop("Error: Sampletype=1 detected in child survey - remove to proceed")
   }
   if(n_participants_check != nrow(part)){
@@ -514,6 +486,8 @@ if (part$survey_type[1] == "child") {
   if(!(999 %in% unique(contacts$hhm_id) | 0 %in% unique(contacts$hhm_id))) {
     stop("Adult participant not included in contacts")
   }
+  message("Child survey checked")
+
 }
 
 # Print the survey path to use in r/dm_data_checks.R
@@ -526,5 +500,3 @@ saveRDS(contacts, file = file.path(survey_path, "clean_contacts.rds"))
 
 saveRDS(households, file = file.path(survey_path, "clean_households.rds"))
 
-#
-#

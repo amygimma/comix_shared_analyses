@@ -6,17 +6,18 @@ library(data.table)
 ##
 
 # OPTIONAL SETUP
-if(!CLEANING_SCRIPT & !exists(spss_ref_)) {
+if(!exists("CLEANING_SCRIPT")) CLEANING_SCRIPT <- F
+if(!CLEANING_SCRIPT & !exists("spss_ref_")) {
   country_code_ <- "uk"
-  panel_ <- "panel_f"
-  spss_ref_ <- "PFW6"
+  panel_ <- "panel_e"
+  spss_ref_ <- "PEW10"
   SAVE_LOCAL <- T
 }
 
 
 # if (file.exists("r/user_setup.R")) source("r/user_setup.R")
 spss_path <- file.path("data", "raw_data")
-if (!is.null(USER_SPSS_PATH)) spss_path <- USER_SPSS_PATH
+# if (!is.null(USER_SPSS_PATH)) spss_path <- USER_SPSS_PATH
 
 if (exists("spss_ref_")) {
   spss_data_path <- file.path(spss_path, country_code_, panel_)
@@ -50,7 +51,11 @@ data_path <- "data"
 dir.create(data_path, showWarnings = F)
 # if (!is.null(USER_DATA_PATH) & !SAVE_LOCAL) data_path <- USER_DATA_PATH
 
-if(!is.null(dt$Q_Panel)) {
+if (grepl("BE2", spss_file)) {
+  dt$Panel <- "Panel B"
+  dt$Country <- "Belgium"
+  dt$CountryCode <- "BE"
+} else if (!is.null(dt$Q_Panel)) {
   setnames(dt, old = c("Q_Panel", "Q_Wave"), new = c("Panel", "Wave"))
 }
 
@@ -92,3 +97,4 @@ message("Splitting survey")
 wave_ <- wave_name
 panel_ <- panel_name
 source(file.path(scripts_path, "dm_split_survey.R"))
+

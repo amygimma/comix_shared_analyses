@@ -5,9 +5,9 @@ source("r/user_setup.R")
 
 # SETUP
 base_data_path <- "data"
-# if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA'l\;''\;ll\\_PATH
-panel_paths <- c("Panel F", "Panel FC")
-wave_paths <- c("Wave 5")
+# if (!is.null(USER_DATA_PATH)) base_data_path <- USER_DATA_PATH
+panel_paths <- c("Panel E", "Panel EC")
+wave_paths <- c("Wave 10")
 
 
 combine_dts <- function(base_file_name, country_code, panels, waves) {
@@ -22,10 +22,11 @@ combine_dts <- function(base_file_name, country_code, panels, waves) {
 
   data_paths <- grep(paste(panels_s, collapse = "|"), data_paths, value = TRUE)
   data_paths <- grep(paste(waves_s, collapse = "|"), data_paths, value = TRUE)
+  data_paths <- grep(country_code, data_paths, value = TRUE)
   data_paths <- grep("interim|test|archive|raw_data|adj|^clean_", data_paths,
                      value = TRUE, invert = TRUE)
-
-  if (length(data_paths) < (length(panel_paths) * length(wave_paths))) {
+  # browser()
+  if (length(data_paths) != (length(panel_paths) * length(wave_paths))) {
     stop("Not all data found, check wave and panel paths")
   }
 
@@ -34,6 +35,8 @@ combine_dts <- function(base_file_name, country_code, panels, waves) {
   })
 
   combined_data_dt <- readRDS(file.path(base_data_file_path))
+  # combined_data_dt <- combined_data_dt[wave != "Wave 2"]
+
   if (length(data_dts) > 0) {
     for(i in 1:length(data_dts)) {
       message(data_paths[i])
@@ -83,23 +86,26 @@ for (country_code in country_codes) {
   cont_dt <- combine_dts(
     cont_base_file, country_code,panels = panel_paths, waves = wave_paths)
 
-  table(cont_dt$panel, cont_dt$wave)
+  table(cont_dt$panel, cont_dt$wave,cont_dt$country)
   ncol(cont_dt)
 
   # HOUSEHOLDS
   # #
   hh_base_file <- "clean_households.rds"
   hh_dt <- combine_dts(hh_base_file, country_code, panels = panel_paths, waves = wave_paths)
-  table(hh_dt$panel, hh_dt$wave)
+  table(hh_dt$panel, hh_dt$wave, hh_dt$country)
   ncol(hh_dt)
 
   part_dt <- add_n_cnts_location_cols(part_dt, cont_dt, replace_existing_cols = TRUE)
+
+  browser()
   saveRDS(part_dt,
           file.path(base_data_path, country_code, part_base_file))
   saveRDS(cont_dt,
           file.path(base_data_path, country_code, cont_base_file))
   saveRDS(hh_dt,
           file.path(base_data_path, country_code, hh_base_file))
+
+  if (country_code == "uk") source("r/r_estimates/regional/00_setup_regions.R")
 }
 
-source("r/r_estimates/regional/00_setup_regions.R")

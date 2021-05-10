@@ -23,6 +23,8 @@ households <- merge(households, part[, list(part_id, child_hhm_id, survey_type)]
                     by.y = c("part_id", "child_hhm_id"),
                     all.x = TRUE)
 table(households$survey_type, useNA = "always")
+table(households$hhm_id, useNA = "always")
+
 
 # Add flag for child participant (from merged part data)
 households[, child_participant := fcase(
@@ -44,24 +46,38 @@ demographic_cols <- households[child_participant == TRUE,
 part <- merge(part, demographic_cols,
               by.x = c("part_id", "child_hhm_id"), by.y = c("part_id", "hhm_id"))
 
-child_age_groups <- c("Under 1", "1-4", "5-11",  "12-15", "16-17")
-child_matrix_age_bins <- c("[0,1)", "[1,5)", "[5,12)", "[12,16)", "[16,17)")
-
 table(part$cnt_age)
+
+if (dt$country_code[1] == "BE") {
+  child_age_groups <- c("Under 1", "1-4", "5-6", "7-11", "12-15", "16-17")
+  child_matrix_age_bins <- c("[0,1)", "[1,5)", "[5,7)", "[7,12)", "[12,16)", "[16,17)")
+} else {
+  child_age_groups <- c("Under 1", "1-4", "5-11",  "12-15", "16-17")
+  child_matrix_age_bins <- c("[0,1)", "[1,5)", "[5,12)", "[12,16)", "[16,17)")
+}
+
+table(part$cnt_age, useNA = "always")
 part[, cnt_age := factor(cnt_age, levels = child_age_groups)]
 part[, cnt_age := fcase(
   cnt_age == child_age_groups[1], child_matrix_age_bins[1],
   cnt_age == child_age_groups[2], child_matrix_age_bins[2],
   cnt_age == child_age_groups[3], child_matrix_age_bins[3],
   cnt_age == child_age_groups[4], child_matrix_age_bins[4],
-  cnt_age == child_age_groups[5], child_matrix_age_bins[5]
+  cnt_age == child_age_groups[5], child_matrix_age_bins[5],
+  cnt_age == child_age_groups[6], child_matrix_age_bins[6]
+
 
 )]
-part[, cnt_gender_nb := cnt_gender]
+table(part$cnt_age, useNA = "always")
+part[, cnt_gender := cnt_gender]
 
 
 # Add participant to contacts if appropriate
-parent_cnts <- dt[row_id == 0]
+if (dt$country_code[1] == "BE") {
+  parent_cnts <- dt[row_id %in% c(0,999)]
+} else {
+  parent_cnts <- dt[row_id == 0]
+}
 cnt_adult_age_bins <- c(18, 20, seq(25, 100, 10))
 parent_cnts[ , part_age_group := cut(part_age,
                            breaks = cnt_adult_age_bins,
@@ -82,9 +98,13 @@ table(contacts[hhm_id == 0]$cnt_age, useNA = "always")
 contacts[hhm_id == 0, cnt_gender :=
              match_variable(.SD, part_id, parent_cnts, "part_gender_nb"), by = "part_id"]
 contacts[hhm_id == 0, cont_id := paste0(part_id ,"-", 999, "-", week)]
-contacts <- contacts[hhm_id == 0, hhm_id := 999]
 
-table(contacts[hhm_id == 999]$cnt_age)
+# if (dt$country_code[1] == "BE") {
+  contacts <- contacts[hhm_id == 0, hhm_id := 999]
+  table(contacts[hhm_id == 999]$cnt_age)
+# } else {
+#   contacts <- contacts[hhm_id == 0, hhm_id := 999]
+# }
 # Add participant to contacts (assigned to hhm_id 999 to follow original ipsos structure)
 
 if(nrow(contacts[hhm_id == 999]) > 0){
@@ -111,8 +131,8 @@ if(nrow(households[hhm_id == 999]) > 0){
 }
 
 # Set names of child contact demographics to participating child participant demographics
-setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender", "cnt_gender_nb"),
-         new = c("part_age_group", "part_age_est_max", "part_age_est_min", "part_gender", "part_gender_nb"))
+setnames(part, old = c("cnt_age", "cnt_age_est_max", "cnt_age_est_min", "cnt_gender"),
+         new = c("part_age_group", "part_age_est_max", "part_age_est_min", "part_gender"))
 
 hhm_child <- households[child_participant == T]
 part[, part_student := match_variable(.DS, part_id, hhm_child, "hhm_student")]
